@@ -3,13 +3,14 @@ package udp;
 import java.io.*;
 import java.net.*;
 
-public class UdpServer {
+public class UdpServer_file {
 	DatagramSocket dsock;
 	DatagramPacket sPack, rPack;
 	InetAddress client;
-	int sport = 7777, cport;
+	int sport = 8000, cport;
+	FileEvent fileEvent;
 	
-	public UdpServer(int sport) {
+	public UdpServer_file(int sport) {
 		try{
 			this.sport = sport;
 			
@@ -22,39 +23,76 @@ public class UdpServer {
 		}
 	}
 	
-	public void communicate(){
+	public void createAndListenSocket(){
+		
 		try{
+			byte[] inputData = new byte[1024 * 64];
 
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-			
-			while(true) {
-				byte[] buffer = new byte[1024];
+			while (true) {
 				
-				rPack = new DatagramPacket(buffer, buffer.length);
-				dsock.receive(rPack);
+				DatagramPacket rPack = new DatagramPacket(inputData, inputData.length);
+				dsock.receive(rPack);			
+				byte[] data = rPack.getData();
 				
-				String strIn = new String(rPack.getData(), 0, rPack.getData().length);
+				ByteArrayInputStream in = new ByteArrayInputStream(data);
+				ObjectInputStream is = new ObjectInputStream(in);
+				
+				fileEvent = (FileEvent) is.readObject();
+				
+				if (fileEvent.getStatus().equalsIgnoreCase("Error")) {
+					System.out.println("Errors happened! while data packing");
+					System.exit(0);
+				}
+				
+				createAndWriteFile();
 				
 				client = rPack.getAddress();
 				cport = rPack.getPort();
+							
+				String strOut = "File Received";
+				byte[] strOutByte = strOut.getBytes();
 				
-				System.out.println("client" + client + " : " + cport + "]" + strIn);
-				
-				if(strIn.trim().equals("quit")) break;
-				
-				String strOut = br.readLine();
-				sPack = new DatagramPacket(strOut.getBytes(), strOut.getBytes().length, client, cport);
+				sPack = new DatagramPacket(strOutByte, strOutByte.length, client, cport);
 				dsock.send(sPack);
+				Thread.sleep(3000);
+				System.out.println("UDP 서버를 종료합니다.");
+				System.exit(0);
 			}
-			System.out.println("UDP 서버를 종료합니다.");
-		} catch(Exception e) {
-			System.out.println(e);
+		} catch (SocketException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 	
-	public static void main(String[] args) {
-		UdpServer client = new UdpServer(7777);
-		client.communicate();
+	public void createAndWriteFile() {
+		String outputFile = fileEvent.getDestDir() + fileEvent.getFilename();
+		if (!new File(fileEvent.getDestDir()).exists()) {
+			new File(fileEvent.getDestDir()).mkdirs();
+		}
+		
+		File dstFile = new File(outputFile);
+		FileOutputStream fileOutputStream = null;
+		
+		try {
+			fileOutputStream = new FileOutputStream(dstFile);
+			fileOutputStream.write(fileEvent.getFileData());
+			fileOutputStream.flush();
+			fileOutputStream.close();
+			System.out.println("Output file : " + outputFile + " is successfully saved ");
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
-	
+
+	public static void main(String[] args) {
+		UdpServer_file server = new UdpServer_file(8000);
+		server.createAndListenSocket();
+	}
 }
