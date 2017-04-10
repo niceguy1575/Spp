@@ -2,26 +2,42 @@ package tcp;
 
 import java.io.*;
 import java.net.*;
-import java.util.Scanner;
+
+import udp.FileEvent;
 
 public class TcpClient {
 	Socket socket;
+	ObjectOutputStream outputStream;
+	boolean isConnected = false;
+	FileEvent fileEvent;
 	BufferedReader in;
 	PrintWriter out;
-	
-	public TcpClient (String ip, int port) {
-		try {
-			socket = new Socket(ip, port);
-			
-			//서버 소켓에 스트림을 연결
-			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-			printInfo();
-		} catch (IOException e) {
-			System.out.println(e.toString());			
+	String srcPath, destPath, ip;
+	int port = 8000;
+
+	public TcpClient(String ip, int port, String srcPath, String destPath) {
+		
+		this.ip = ip;
+		this.port = port;
+		this.srcPath = srcPath;
+		this.destPath = destPath;
+		
+		while(!isConnected) {
+			try {
+				socket = new Socket(ip, port);	
+				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+				outputStream = new ObjectOutputStream(socket.getOutputStream());
+				//서버 소켓에 스트림을 연결
+				printInfo();
+				isConnected = true;
+
+			} catch (IOException e) {
+				System.out.println(e.toString());			
+			}
 		}
 	}
-
+	
 	public void receive() {
 		try {
 			//서버 소켓으로부터 받은 메시지를 화면에 출력
@@ -36,6 +52,58 @@ public class TcpClient {
 		out.println(msg);
 		out.flush();
 		System.out.println("[클라이언트] " + msg);		
+	}
+	
+	public void sendFile() {
+		
+		FileEvent fileEvent = new FileEvent();
+		
+		String fileName = srcPath.substring(srcPath.lastIndexOf("/") + 1, srcPath.length());
+		//String path = srcPath.substring(0, srcPath.lastIndexOf("/") + 1);
+		
+		fileEvent.setDestDir(destPath);
+		fileEvent.setFilename(fileName);
+		fileEvent.setSrcDir(srcPath);
+		
+		File file = new File(srcPath);
+		
+		if (file.isFile()) {
+			try {
+				DataInputStream diStream = new DataInputStream(new FileInputStream(file));
+				long len = (int) file.length();
+				byte[] fileBytes = new byte[(int) len];
+				
+				int read = 0;
+				int numRead = 0;
+				while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
+					read = read + numRead;
+				}
+
+				fileEvent.setFileSize(len);
+				fileEvent.setFileData(fileBytes);
+				fileEvent.setStatus("Success");
+				diStream.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+				fileEvent.setStatus("Error");
+			}
+		} else {
+			System.out.println("path is not pointing to a file");
+			fileEvent.setStatus("Error");
+			System.out.println("TCP client를 종료합니다.");
+			System.exit(0);
+		}
+		
+		// write file
+		try {
+			outputStream.writeObject(fileEvent);
+			System.out.println("파일 전송 완료");
+			Thread.sleep(3000);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void close() {
@@ -57,14 +125,9 @@ public class TcpClient {
 	
 	public static void main(String[] args) {
 		//서버 주소와 포트번호를 지정하여 서버에 접속
-		TcpClient client = new TcpClient("127.0.0.1", 7777); 
-		
-		System.out.print("서버에게 보낼 메시지 입력 >> ");
-		Scanner s = new Scanner(System.in);
-		String msg = s.nextLine();
-		client.send(msg);
+		TcpClient client = new TcpClient("127.0.0.1", 8000, "C:/prac/a.txt", "C:/prac/test/");
+		client.sendFile();
 		client.receive();
 		client.close();
-		s.close();
 	}
 }

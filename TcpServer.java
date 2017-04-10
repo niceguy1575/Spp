@@ -3,20 +3,28 @@ package tcp;
 import java.io.*;
 import java.net.*;
 
+import udp.FileEvent;
+
 public class TcpServer {
-	int port = 7777;
+	int port = 8000;
 	ServerSocket server;
 	Socket socket;
+	ObjectInputStream inputStream;
+	FileEvent fileEvent;
+	File dstFile;
+	FileOutputStream fileOutputStream;
 	BufferedReader in;
 	PrintWriter out;
-	
+
 	public TcpServer (int port) {
-		this.port = port;
-		System.out.println(">> 서버를 시작합니다.");
 		try {
-			server = new ServerSocket(port);
+			this.port = port;
+			
+			System.out.println(">> 서버를 시작합니다.");
+			
+			this.server = new ServerSocket(port);			
 		} catch (IOException e) {
-			System.out.println(e.toString());			
+			System.out.println(e.toString());	
 		}
 	}
 	
@@ -25,19 +33,57 @@ public class TcpServer {
 		try {
 			// 클라이언트 접속때까지 대기
 			socket = server.accept(); 
-			printInfo();
-			//클라이언트 소켓에 스트림을 연결
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+			inputStream = new ObjectInputStream(socket.getInputStream());
+
+			printInfo();
+			
+		} catch (IOException e) {
+			System.out.println(e.toString());
+		}
+	}
+
+	public void receiveFile() {
+		try {
+			fileEvent = (FileEvent) inputStream.readObject();
+
+			if (fileEvent.getStatus().equalsIgnoreCase("Error")) {
+				System.out.println("에러가 발생하였습니다. 종료합니다.");
+				System.exit(0);
+			}
+			
+			String outputFile = fileEvent.getDestDir() + fileEvent.getFilename();
+			
+			// 경로가 없으면 새로 만든다.
+			if (!new File(fileEvent.getDestDir()).exists()) {
+				new File(fileEvent.getDestDir()).mkdirs();
+			}
+			
+			dstFile = new File(outputFile);
+			
+			fileOutputStream = new FileOutputStream(dstFile);
+			fileOutputStream.write(fileEvent.getFileData());
+			fileOutputStream.flush();
+			fileOutputStream.close();
+			
+			System.out.println("Output file : " + outputFile + "is successfully saved");
+			
+			Thread.sleep(3000);
+					
 		} catch (IOException e) {
 			System.out.println(e.toString());			
+		}catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 	
 	public void receive() {
 		try {
-			//클라이언트 소켓으로부터 받은 메시지를 화면에 출력
-			System.out.println("[클라이언트] "+ in.readLine());		
+			//서버 소켓으로부터 받은 메시지를 화면에 출력
+			System.out.println("[서버] "+ in.readLine());		
 		} catch (IOException e) {
 			System.out.println(e.toString());			
 		}
@@ -68,11 +114,10 @@ public class TcpServer {
 	}
 	
 	public static void main(String[] args) {
-		int port = 7777;			
-		TcpServer myServer = new TcpServer(port);
-		myServer.waitForClient();
-		myServer.receive();
-		myServer.send("서버에 접속하신 것을 환영합니다!");
-		myServer.close();
+		TcpServer server = new TcpServer(8000);
+		server.waitForClient();
+		server.receiveFile();
+		server.send("파일을 잘 받았습니다!");
+		server.close();
 	}
 }
