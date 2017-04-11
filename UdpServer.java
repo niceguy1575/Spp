@@ -3,14 +3,14 @@ package udp;
 import java.io.*;
 import java.net.*;
 
-public class UdpServer_file {
+public class UdpServer {
 	DatagramSocket dsock;
 	DatagramPacket sPack, rPack;
 	InetAddress client;
 	int sport = 8000, cport;
 	FileEvent fileEvent;
 	
-	public UdpServer_file(int sport) {
+	public UdpServer(int sport) {
 		try{
 			this.sport = sport;
 			
@@ -92,7 +92,7 @@ public class UdpServer_file {
 	}
 
 	public static void main(String[] args) {
-		UdpServer_file server = new UdpServer_file(8000);
+		UdpServer server = new UdpServer(8000);
 		server.createAndListenSocket();
 	}
 }

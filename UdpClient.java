@@ -3,7 +3,7 @@ package udp;
 import java.io.*;
 import java.net.*;
 
-public class UdpClient_file {
+public class UdpClient {
 	DatagramSocket dsock;
 	DatagramPacket sPack, rPack;
 	InetAddress server;
@@ -11,7 +11,7 @@ public class UdpClient_file {
 	String srcPath, destPath;
 	FileEvent event;
 
-	public UdpClient_file(String ip, int port, String srcPath, String destPath) {
+	public UdpClient(String ip, int port, String srcPath, String destPath) {
 		try{
 			server = InetAddress.getByName(ip);
 			this.port = port;
@@ -105,7 +105,7 @@ public class UdpClient_file {
 	}
 	
 	public static void main(String[] args) {
-		UdpClient_file client = new UdpClient_file("192.168.56.102", 8000, "C:/prac/picture.jpg", "C:/prac/test3/");
+		UdpClient client = new UdpClient("192.168.56.102", 8000, "C:/prac/picture.jpg", "C:/prac/test3/");
 		client.createConnection();
 	}
 }
