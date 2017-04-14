@@ -3,13 +3,17 @@ package udp;
 import java.io.*;
 import java.net.*;
 
+import tcp.CRC32get;
+import udp.FileEvent;
+
 public class UdpServer {
 	DatagramSocket dsock;
 	DatagramPacket sPack, rPack;
 	InetAddress client;
 	int sport = 8000, cport;
 	FileEvent fileEvent;
-	
+    CRC32get crc = new CRC32get();
+
 	public UdpServer(int sport) {
 		try{
 			this.sport = sport;
@@ -83,6 +87,14 @@ public class UdpServer {
 			fileOutputStream.write(fileEvent.getFileData());
 			fileOutputStream.flush();
 			fileOutputStream.close();
+			
+			if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getSrcDir(),fileEvent.getFileData())) == 0 ) {
+				System.out.format("보낸 파일의 CRC32값은 %08X 입니다.\n",fileEvent.getCRC32Value());
+				System.out.format("무결성 보장!\n");
+			} else {
+				System.out.format("무결성을 보장할 수 없습니다!\n");
+			}
+			
 			System.out.println("Output file : " + outputFile + " is successfully saved ");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -91,6 +103,16 @@ public class UdpServer {
 		}
 	}
 
+	public long checkCRCValue(FileEvent event, long crcValue) {
+		// 다르면 -1 return
+		// 같으면 0 return
+		if(event.getCRC32Value() == crcValue) {
+			return 0; 
+		}
+		else {
+			return -1;
+		}
+	}
 	public static void main(String[] args) {
 		UdpServer server = new UdpServer(8000);
 		server.createAndListenSocket();

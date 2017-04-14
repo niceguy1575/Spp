@@ -3,6 +3,8 @@ package udp;
 import java.io.*;
 import java.net.*;
 
+import tcp.CRC32get;
+
 public class UdpClient {
 	DatagramSocket dsock;
 	DatagramPacket sPack, rPack;
@@ -10,6 +12,7 @@ public class UdpClient {
 	int port = 8000;
 	String srcPath, destPath;
 	FileEvent event;
+	CRC32get crc = new CRC32get();
 
 	public UdpClient(String ip, int port, String srcPath, String destPath) {
 		try{
@@ -90,6 +93,8 @@ public class UdpClient {
 				fileEvent.setFileSize(len);
 				fileEvent.setFileData(fileBytes);
 				fileEvent.setStatus("Success");
+				fileEvent.setCRC32Value(crc.getCRC32(srcPath,fileBytes));
+
 				diStream.close();
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -105,7 +110,7 @@ public class UdpClient {
 	}
 	
 	public static void main(String[] args) {
-		UdpClient client = new UdpClient("192.168.56.102", 8000, "C:/prac/picture.jpg", "C:/prac/test3/");
+		UdpClient client = new UdpClient("127.0.0.1", 8000, "C:/prac/a.txt", "C:/prac/test/");
 		client.createConnection();
 	}
 }

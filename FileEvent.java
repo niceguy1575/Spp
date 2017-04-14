@@ -1,6 +1,7 @@
 package tcp;
 
 import java.io.Serializable;
+//import java.util.zip.*;
 
 public class FileEvent implements Serializable {
 
@@ -15,7 +16,8 @@ public class FileEvent implements Serializable {
 	private long fileSize;
 	private byte[] fileData;
 	private String status;
-	
+    private long crcRes;
+
 	public String getDestDir() {
 		return destDir;
 	}
@@ -62,5 +64,13 @@ public class FileEvent implements Serializable {
 
 	public void setFileData(byte[] fileData) {
 		this.fileData = fileData;
+	}
+	
+	public void setCRC32Value(long crc) {
+		this.crcRes = crc;
+	}
+	
+	public long getCRC32Value() {
+		return crcRes;
 	}
 }

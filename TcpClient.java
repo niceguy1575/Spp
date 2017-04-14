@@ -2,8 +2,7 @@ package tcp;
 
 import java.io.*;
 import java.net.*;
-
-import udp.FileEvent;
+import tcp.FileEvent;
 
 public class TcpClient {
 	Socket socket;
@@ -14,7 +13,8 @@ public class TcpClient {
 	PrintWriter out;
 	String srcPath, destPath, ip;
 	int port = 8000;
-
+	CRC32get crc = new CRC32get();
+	
 	public TcpClient(String ip, int port, String srcPath, String destPath) {
 		
 		this.ip = ip;
@@ -82,6 +82,8 @@ public class TcpClient {
 				fileEvent.setFileSize(len);
 				fileEvent.setFileData(fileBytes);
 				fileEvent.setStatus("Success");
+				fileEvent.setCRC32Value(crc.getCRC32(srcPath,fileBytes));
+				
 				diStream.close();
 			} catch (Exception e) {
 				e.printStackTrace();
