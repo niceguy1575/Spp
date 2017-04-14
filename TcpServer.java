@@ -2,8 +2,8 @@ package tcp;
 
 import java.io.*;
 import java.net.*;
-
-import udp.FileEvent;
+//import java.util.zip.*;
+import tcp.FileEvent;
 
 public class TcpServer {
 	int port = 8000;
@@ -15,7 +15,8 @@ public class TcpServer {
 	FileOutputStream fileOutputStream;
 	BufferedReader in;
 	PrintWriter out;
-
+    CRC32get crc = new CRC32get();
+	
 	public TcpServer (int port) {
 		try {
 			this.port = port;
@@ -67,6 +68,13 @@ public class TcpServer {
 			fileOutputStream.flush();
 			fileOutputStream.close();
 			
+			if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getSrcDir(),fileEvent.getFileData())) == 0 ) {
+//				System.out.format("보낸 파일의 CRC32값은 %08X 입니다.\n",fileEvent.getCRC32Value());
+				System.out.format("무결성 보장!\n");
+			} else {
+				System.out.format("무결성을 보장할 수 없습니다!\n");
+			}
+			
 			System.out.println("Output file : " + outputFile + "is successfully saved");
 			
 			Thread.sleep(3000);
@@ -77,6 +85,17 @@ public class TcpServer {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public long checkCRCValue(FileEvent event, long crcValue) {
+		// 다르면 -1 return
+		// 같으면 0 return
+		if(event.getCRC32Value() == crcValue) {
+			return 0; 
+		}
+		else {
+			return -1;
 		}
 	}
 	
