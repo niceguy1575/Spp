@@ -1,11 +1,10 @@
-package tcp;
+package udp_tcp;
 
 import java.io.*;
 import java.net.*;
 
-import udp.FileEvent;
-
 public class TcpServer {
+//	static int cnt = 0;
 	int port = 8000;
 	ServerSocket server;
 	Socket socket;
@@ -15,7 +14,8 @@ public class TcpServer {
 	FileOutputStream fileOutputStream;
 	BufferedReader in;
 	PrintWriter out;
-
+    CRC32get crc = new CRC32get();
+	
 	public TcpServer (int port) {
 		try {
 			this.port = port;
@@ -54,7 +54,6 @@ public class TcpServer {
 			}
 			
 			String outputFile = fileEvent.getDestDir() + fileEvent.getFilename();
-			
 			// 경로가 없으면 새로 만든다.
 			if (!new File(fileEvent.getDestDir()).exists()) {
 				new File(fileEvent.getDestDir()).mkdirs();
@@ -67,10 +66,15 @@ public class TcpServer {
 			fileOutputStream.flush();
 			fileOutputStream.close();
 			
-			System.out.println("Output file : " + outputFile + "is successfully saved");
+			if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getSrcDir(),fileEvent.getFileData())) == 0 ) {
+				System.out.format("무결성 보장!\n");
+			} else {
+				System.out.format("무결성을 보장할 수 없습니다!\n");
+			}
 			
+			System.out.println("Output file : " + outputFile + "is successfully saved");
+
 			Thread.sleep(3000);
-					
 		} catch (IOException e) {
 			System.out.println(e.toString());			
 		}catch (ClassNotFoundException e) {
@@ -80,13 +84,28 @@ public class TcpServer {
 		}
 	}
 	
-	public void receive() {
+	public long checkCRCValue(FileEvent event, long crcValue) {
+		// 다르면 -1 return
+		// 같으면 0 return
+		if(event.getCRC32Value() == crcValue) {
+			return 0; 
+		}
+		else {
+			return -1;
+		}
+	}
+	
+	public String receive() {
+		String mesg = null;
 		try {
 			//서버 소켓으로부터 받은 메시지를 화면에 출력
-			System.out.println("[서버] "+ in.readLine());		
+//			System.out.println("[서버] "+ in.readLine());
+			mesg = in.readLine();
+			return mesg;
 		} catch (IOException e) {
 			System.out.println(e.toString());			
 		}
+		return mesg;
 	}
 	
 	public void send(String msg) {
@@ -114,9 +133,17 @@ public class TcpServer {
 	}
 	
 	public static void main(String[] args) {
+		String metaData;
 		TcpServer server = new TcpServer(8000);
 		server.waitForClient();
-		server.receiveFile();
+		metaData = server.receive();
+		server.send("continue");
+		
+		for(int i = 0 ; i < Integer.parseInt(metaData) ; i ++) {
+			server.receiveFile();
+			server.send("continue");
+		}
+		
 		server.send("파일을 잘 받았습니다!");
 		server.close();
 	}

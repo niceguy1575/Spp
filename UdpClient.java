@@ -1,4 +1,4 @@
-package udp;
+package udp_tcp;
 
 import java.io.*;
 import java.net.*;
@@ -27,31 +27,57 @@ public class UdpClient {
 	
 	public void createConnection(){
 		
+		
+		/*
+		 * 1. file length
+		 * 2. length receive
+		 * 3. end
+		 */
 		try{
-			byte[] inputData = new byte[1024 * 64];
-			event = getFileEvent();
 			
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			ObjectOutputStream os = new ObjectOutputStream(outputStream);
+			while(true) {
+				// meta data
+				File directory = new File(srcPath);
+				File[] fList = directory.listFiles();
+				String len = String.valueOf(fList.length);
+				// 1. file length
+				
+				String strOut = len;
+				byte[] strOutByte = strOut.getBytes();
+				
+				// file length send
+				sPack = new DatagramPacket(strOutByte, strOutByte.length, server, port);
+				dsock.send(sPack);
+				
+				byte[] inputData = new byte[1024 * 64];
+				
+				// 2. length receive
+
+				rPack = new DatagramPacket(inputData, inputData.length);
+				dsock.receive(rPack);
+
+				String response = new String(rPack.getData());
+				for(int i = 0 ; i < Integer.parseInt(len); i ++){					
+					if(response.charAt(0) == 'c') {
+						event = getFileEvent(fList[i].getAbsolutePath());
+						
+						ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+						ObjectOutputStream os = new ObjectOutputStream(outputStream);
+						
+						os.writeObject(event);
+						
+						byte[] data = outputStream.toByteArray();
+						
+						sPack = new DatagramPacket(data, data.length, server, port);
+						
+						dsock.send(sPack);
+						Thread.sleep(2000);
+					}
+				}
+				System.out.println("UDP client를 종료합니다.");
+				System.exit(0);
+			}
 			
-			os.writeObject(event);
-			
-			byte[] data = outputStream.toByteArray();
-			
-			sPack = new DatagramPacket(data, data.length, server, port);
-			
-			dsock.send(sPack);
-			System.out.println("File transfer from client");
-			
-			rPack = new DatagramPacket(inputData, inputData.length);
-			dsock.receive(rPack);
-			
-			String response = new String(rPack.getData());
-			System.out.println("Response from server:" + response);
-			
-			Thread.sleep(2000);
-			System.out.println("UDP client를 종료합니다.");
-			System.exit(0);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (SocketException e) {
@@ -63,11 +89,11 @@ public class UdpClient {
 		}
 	}
 	
-	public FileEvent getFileEvent() {
+	public FileEvent getFileEvent(String srcPath) {
 		
 		FileEvent fileEvent = new FileEvent();
 		
-		String fileName = srcPath.substring(srcPath.lastIndexOf("/") + 1, srcPath.length());
+		String fileName = srcPath.substring(srcPath.lastIndexOf("\\") + 1, srcPath.length());
 		//String path = srcPath.substring(0, srcPath.lastIndexOf("/") + 1);
 		fileEvent.setDestDir(destPath);
 		fileEvent.setFilename(fileName);
@@ -105,7 +131,11 @@ public class UdpClient {
 	}
 	
 	public static void main(String[] args) {
-		UdpClient client = new UdpClient("192.168.56.102", 8000, "C:/prac/picture.jpg", "C:/prac/test3/");
+		String srcPath = "C:/prac/";
+		String destPath = "C:/prac1/";
+
+		//서버 주소와 포트번호를 지정하여 서버에 접속
+		UdpClient client = new UdpClient("127.0.0.1", 8001, srcPath, destPath);
 		client.createConnection();
 	}
 }

@@ -1,13 +1,14 @@
-package udp;
+package udp_tcp;
 
 import java.io.*;
 import java.net.*;
+
 
 public class UdpServer {
 	DatagramSocket dsock;
 	DatagramPacket sPack, rPack;
 	InetAddress client;
-	int sport = 8000, cport;
+	int sport = 8001, cport;
 	FileEvent fileEvent;
 	
 	public UdpServer(int sport) {
@@ -25,35 +26,52 @@ public class UdpServer {
 	
 	public void createAndListenSocket(){
 		
+		
+		/*
+		 * 1. length receive
+		 * 2. send continue and save file
+		 * 3. end
+		 */
+		
 		try{
-			byte[] inputData = new byte[1024 * 64];
-
 			while (true) {
 				
+				byte[] inputData = new byte[1024 * 64];
+				
+				// 1. length receive
+				
 				DatagramPacket rPack = new DatagramPacket(inputData, inputData.length);
-				dsock.receive(rPack);			
-				byte[] data = rPack.getData();
-				
-				ByteArrayInputStream in = new ByteArrayInputStream(data);
-				ObjectInputStream is = new ObjectInputStream(in);
-				
-				fileEvent = (FileEvent) is.readObject();
-				
-				if (fileEvent.getStatus().equalsIgnoreCase("Error")) {
-					System.out.println("Errors happened! while data packing");
-					System.exit(0);
-				}
-				
-				createAndWriteFile();
-				
+				dsock.receive(rPack);
 				client = rPack.getAddress();
 				cport = rPack.getPort();
-							
-				String strOut = "File Received";
-				byte[] strOutByte = strOut.getBytes();
+
+				// 2. send continue and save file
+				String length = new String(rPack.getData());
+				char len = length.charAt(0);
+				int cnt = Character.getNumericValue(len);
+				while(cnt > 0) {
+					String strOut = "c";
+					byte[] strOutByte = strOut.getBytes();
+					
+					sPack = new DatagramPacket(strOutByte, strOutByte.length, client, cport);
+					dsock.send(sPack);
+					
+
+					dsock.receive(rPack);	
+
+					byte[] data = rPack.getData();
+					
+					ByteArrayInputStream in = new ByteArrayInputStream(data);
+					ObjectInputStream is = new ObjectInputStream(in);
+					fileEvent = (FileEvent) is.readObject();
+					if (fileEvent.getStatus().equalsIgnoreCase("Error")) {
+						System.out.println("Errors happened! while data packing");
+						System.exit(0);
+					}
+					createAndWriteFile();
+					cnt = cnt - 1;
+				}
 				
-				sPack = new DatagramPacket(strOutByte, strOutByte.length, client, cport);
-				dsock.send(sPack);
 				Thread.sleep(3000);
 				System.out.println("UDP 서버를 종료합니다.");
 				System.exit(0);
@@ -92,7 +110,7 @@ public class UdpServer {
 	}
 
 	public static void main(String[] args) {
-		UdpServer server = new UdpServer(8000);
+		UdpServer server = new UdpServer(8001);
 		server.createAndListenSocket();
 	}
 }
