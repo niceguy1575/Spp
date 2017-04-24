@@ -7,7 +7,7 @@ public class UdpClient {
 	DatagramSocket dsock;
 	DatagramPacket sPack, rPack;
 	InetAddress server;
-	int port = 8000;
+	int port = 8001;
 	String srcPath, destPath;
 	FileEvent event;
 
@@ -112,7 +112,8 @@ public class UdpClient {
 				while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
 					read = read + numRead;
 				}
-
+				long startTime = System.currentTimeMillis();
+				fileEvent.settime(startTime);
 				fileEvent.setFileSize(len);
 				fileEvent.setFileData(fileBytes);
 				fileEvent.setStatus("Success");
@@ -128,14 +129,5 @@ public class UdpClient {
 			System.exit(0);
 		}
 		return fileEvent;
-	}
-	
-	public static void main(String[] args) {
-		String srcPath = "C:/prac/";
-		String destPath = "C:/prac1/";
-
-		//서버 주소와 포트번호를 지정하여 서버에 접속
-		UdpClient client = new UdpClient("127.0.0.1", 8001, srcPath, destPath);
-		client.createConnection();
 	}
 }

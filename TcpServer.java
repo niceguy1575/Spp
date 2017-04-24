@@ -4,7 +4,6 @@ import java.io.*;
 import java.net.*;
 
 public class TcpServer {
-//	static int cnt = 0;
 	int port = 8000;
 	ServerSocket server;
 	Socket socket;
@@ -15,7 +14,8 @@ public class TcpServer {
 	BufferedReader in;
 	PrintWriter out;
     CRC32get crc = new CRC32get();
-	
+    static double avgTime;
+    
 	public TcpServer (int port) {
 		try {
 			this.port = port;
@@ -65,12 +65,9 @@ public class TcpServer {
 			fileOutputStream.write(fileEvent.getFileData());
 			fileOutputStream.flush();
 			fileOutputStream.close();
-			
-			if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getSrcDir(),fileEvent.getFileData())) == 0 ) {
-				System.out.format("무결성 보장!\n");
-			} else {
-				System.out.format("무결성을 보장할 수 없습니다!\n");
-			}
+			long totaltime = System.currentTimeMillis() - fileEvent.gettime();
+			long s = fileEvent.getFileSize();
+			avgTime += s/(totaltime * 1000);
 			
 			System.out.println("Output file : " + outputFile + "is successfully saved");
 
@@ -81,17 +78,6 @@ public class TcpServer {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-		}
-	}
-	
-	public long checkCRCValue(FileEvent event, long crcValue) {
-		// 다르면 -1 return
-		// 같으면 0 return
-		if(event.getCRC32Value() == crcValue) {
-			return 0; 
-		}
-		else {
-			return -1;
 		}
 	}
 	
@@ -143,6 +129,9 @@ public class TcpServer {
 			server.receiveFile();
 			server.send("continue");
 		}
+		
+		System.out.println("file 전송속도 : "+ 1000 * avgTime / Long.valueOf(Integer.parseInt(metaData))  + "bps");
+		System.out.println("file 전송속도 : "+ avgTime / Long.valueOf(Integer.parseInt(metaData))  + "Mb/s");
 		
 		server.send("파일을 잘 받았습니다!");
 		server.close();

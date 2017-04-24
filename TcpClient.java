@@ -3,7 +3,6 @@ package udp_tcp;
 import java.io.*;
 import java.net.*;
 
-
 public class TcpClient {
 	Socket socket;
 	ObjectOutputStream outputStream;
@@ -63,7 +62,6 @@ public class TcpClient {
 		
 		String fileName = srcPath.substring(srcPath.lastIndexOf("\\") + 1, srcPath.length());
 		//String path = srcPath.substring(0, srcPath.lastIndexOf("/") + 1);
-		System.out.println(fileName);
 		fileEvent.setDestDir(destPath);
 		fileEvent.setFilename(fileName);
 		fileEvent.setSrcDir(srcPath);
@@ -81,7 +79,9 @@ public class TcpClient {
 					while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
 						read = read + numRead;
 					}
-	
+					
+					long startTime = System.currentTimeMillis();
+					fileEvent.settime(startTime);
 					fileEvent.setFileSize(len);
 					fileEvent.setFileData(fileBytes);
 					fileEvent.setStatus("Success");
@@ -125,31 +125,5 @@ public class TcpClient {
 		System.out.println("     서버 주소: " + socket.getInetAddress());
 		System.out.println("     서버 포트번호: " + socket.getPort());
 		System.out.println("     클라이인트 포트번호: " + socket.getLocalPort() + '\n');
-	}
-	
-	public static void main(String[] args) {
-				
-		String srcPath = "C:/prac/";
-		String destPath = "C:/prac1/";
-
-		// meta data
-		File directory = new File(srcPath);
-		File[] fList = directory.listFiles();
-		String len = String.valueOf(fList.length);
-		String goBack;
-		//서버 주소와 포트번호를 지정하여 서버에 접속
-		TcpClient client = new TcpClient("127.0.0.1", 8000, srcPath, destPath);
-
-		client.send(len);
-		
-		for(File file:fList){
-			goBack = client.receive();
-			if(goBack.equals("continue")) {
-				client.sendFile(file.getAbsolutePath());
-			}
-		}
-		
-		client.receive();
-		client.close();
 	}
 }

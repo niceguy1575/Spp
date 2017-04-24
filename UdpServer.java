@@ -3,13 +3,13 @@ package udp_tcp;
 import java.io.*;
 import java.net.*;
 
-
 public class UdpServer {
 	DatagramSocket dsock;
 	DatagramPacket sPack, rPack;
 	InetAddress client;
 	int sport = 8001, cport;
 	FileEvent fileEvent;
+	static double avgTime;
 	
 	public UdpServer(int sport) {
 		try{
@@ -49,6 +49,7 @@ public class UdpServer {
 				String length = new String(rPack.getData());
 				char len = length.charAt(0);
 				int cnt = Character.getNumericValue(len);
+				long fileCnt = cnt;
 				while(cnt > 0) {
 					String strOut = "c";
 					byte[] strOutByte = strOut.getBytes();
@@ -64,6 +65,11 @@ public class UdpServer {
 					ByteArrayInputStream in = new ByteArrayInputStream(data);
 					ObjectInputStream is = new ObjectInputStream(in);
 					fileEvent = (FileEvent) is.readObject();
+					
+					long totaltime = System.currentTimeMillis() - fileEvent.gettime();
+					long s = fileEvent.getFileSize();
+					avgTime += s/(totaltime * 1000);
+					
 					if (fileEvent.getStatus().equalsIgnoreCase("Error")) {
 						System.out.println("Errors happened! while data packing");
 						System.exit(0);
@@ -71,6 +77,8 @@ public class UdpServer {
 					createAndWriteFile();
 					cnt = cnt - 1;
 				}
+				System.out.println("file 전송속도 : "+ 1000 * avgTime / fileCnt  + "bps");
+				System.out.println("file 전송속도 : "+ avgTime / fileCnt  + "Mb/s");
 				
 				Thread.sleep(3000);
 				System.out.println("UDP 서버를 종료합니다.");
