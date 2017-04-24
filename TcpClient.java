@@ -78,7 +78,8 @@ public class TcpClient {
 				while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
 					read = read + numRead;
 				}
-
+				long startTime = System.currentTimeMillis();
+				fileEvent.settime(startTime);
 				fileEvent.setFileSize(len);
 				fileEvent.setFileData(fileBytes);
 				fileEvent.setStatus("Success");
@@ -127,9 +128,10 @@ public class TcpClient {
 	
 	public static void main(String[] args) {
 		//서버 주소와 포트번호를 지정하여 서버에 접속
-		TcpClient client = new TcpClient("127.0.0.1", 8000, "C:/prac/a.txt", "C:/prac/test/");
+		TcpClient client = new TcpClient("192.168.0.18", 8000, "C:/Users/YunSeob/Downloads/ch03.ppt", "C:/Users/YunSeob/Downloads/test/");
 		client.sendFile();
 		client.receive();
 		client.close();
+		
 	}
 }
