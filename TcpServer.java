@@ -67,6 +67,17 @@ public class TcpServer {
 			fileOutputStream.write(fileEvent.getFileData());
 			fileOutputStream.flush();
 			fileOutputStream.close();
+			//전송속도
+			long totaltime = System.currentTimeMillis()-fileEvent.gettime();
+			
+			if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getSrcDir(),fileEvent.getFileData())) == 0 ) {
+//				System.out.format("보낸 파일의 CRC32값은 %08X 입니다.\n",fileEvent.getCRC32Value());
+				long s = fileEvent.getFileSize();
+				System.out.format("무결성 보장!\n");
+				System.out.println("file 전송속도 : "+s/(totaltime*1000)+"Mb/s");
+			} else {
+				System.out.format("무결성을 보장할 수 없습니다!\n");
+			}
 			
 			if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getSrcDir(),fileEvent.getFileData())) == 0 ) {
 //				System.out.format("보낸 파일의 CRC32값은 %08X 입니다.\n",fileEvent.getCRC32Value());

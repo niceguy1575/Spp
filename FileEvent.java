@@ -17,7 +17,14 @@ public class FileEvent implements Serializable {
 	private byte[] fileData;
 	private String status;
     private long crcRes;
-
+    private long time;
+    
+    public void settime(long time){
+    	this.time = time;
+    }
+    public long gettime(){
+    	return time;
+    }
 	public String getDestDir() {
 		return destDir;
 	}
