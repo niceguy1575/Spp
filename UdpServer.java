@@ -1,19 +1,17 @@
-package udp;
+package udp_tcp;
 
 import java.io.*;
 import java.net.*;
-
-import tcp.CRC32get;
-import udp.FileEvent;
 
 public class UdpServer {
 	DatagramSocket dsock;
 	DatagramPacket sPack, rPack;
 	InetAddress client;
-	int sport = 8000, cport;
+	int sport = 8001, cport;
 	FileEvent fileEvent;
     CRC32get crc = new CRC32get();
-
+	static double avgTime;
+	
 	public UdpServer(int sport) {
 		try{
 			this.sport = sport;
@@ -29,35 +27,66 @@ public class UdpServer {
 	
 	public void createAndListenSocket(){
 		
+		
+		/*
+		 * 1. length receive
+		 * 2. send continue and save file
+		 * 3. end
+		 */
+		
 		try{
-			byte[] inputData = new byte[1024 * 64];
-
 			while (true) {
 				
+				byte[] inputData = new byte[1024 * 64];
+				
+				// 1. length receive
+				
 				DatagramPacket rPack = new DatagramPacket(inputData, inputData.length);
-				dsock.receive(rPack);			
-				byte[] data = rPack.getData();
-				
-				ByteArrayInputStream in = new ByteArrayInputStream(data);
-				ObjectInputStream is = new ObjectInputStream(in);
-				
-				fileEvent = (FileEvent) is.readObject();
-				
-				if (fileEvent.getStatus().equalsIgnoreCase("Error")) {
-					System.out.println("Errors happened! while data packing");
-					System.exit(0);
-				}
-				
-				createAndWriteFile();
-				
+				dsock.receive(rPack);
 				client = rPack.getAddress();
 				cport = rPack.getPort();
-							
-				String strOut = "File Received";
-				byte[] strOutByte = strOut.getBytes();
+
+				// 2. send continue and save file
+				String length = new String(rPack.getData());
+				char len = length.charAt(0);
+				int cnt = Character.getNumericValue(len);
+				long fileCnt = cnt;
+				while(cnt > 0) {
+					String strOut = "c";
+					byte[] strOutByte = strOut.getBytes();
+					
+					sPack = new DatagramPacket(strOutByte, strOutByte.length, client, cport);
+					dsock.send(sPack);
+					
+
+					dsock.receive(rPack);	
+
+					byte[] data = rPack.getData();
+					
+					ByteArrayInputStream in = new ByteArrayInputStream(data);
+					ObjectInputStream is = new ObjectInputStream(in);
+					fileEvent = (FileEvent) is.readObject();
+					
+					long totaltime = System.currentTimeMillis() - fileEvent.gettime();
+					long s = fileEvent.getFileSize();
+					avgTime += (double)s/(totaltime * 1000);
+					
+					if (fileEvent.getStatus().equalsIgnoreCase("Error")) {
+						System.out.println("Errors happened! while data packing");
+						System.exit(0);
+					}
+					createAndWriteFile();
+					cnt = cnt - 1;
+					
+					if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getDestDir() + fileEvent.getFilename(), fileEvent.getFileData())) == 0 ) {
+						System.out.format("무결성 보장!\n");
+					} else {
+						System.out.format("무결성을 보장할 수 없습니다!\n");
+					}
+				}
+				System.out.println("file 전송속도 : "+ 1000 * avgTime / (double)fileCnt  + "bps");
+				System.out.println("file 전송속도 : "+ avgTime / (double)fileCnt  + "Mb/s");
 				
-				sPack = new DatagramPacket(strOutByte, strOutByte.length, client, cport);
-				dsock.send(sPack);
 				Thread.sleep(3000);
 				System.out.println("UDP 서버를 종료합니다.");
 				System.exit(0);
@@ -70,6 +99,17 @@ public class UdpServer {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public long checkCRCValue(FileEvent event, long crcValue) {
+		// 다르면 -1 return
+		// 같으면 0 return
+		if(event.getCRC32Value() == crcValue) {
+			return 0; 
+		}
+		else {
+			return -1;
 		}
 	}
 	
@@ -87,14 +127,6 @@ public class UdpServer {
 			fileOutputStream.write(fileEvent.getFileData());
 			fileOutputStream.flush();
 			fileOutputStream.close();
-			
-			if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getSrcDir(),fileEvent.getFileData())) == 0 ) {
-				System.out.format("보낸 파일의 CRC32값은 %08X 입니다.\n",fileEvent.getCRC32Value());
-				System.out.format("무결성 보장!\n");
-			} else {
-				System.out.format("무결성을 보장할 수 없습니다!\n");
-			}
-			
 			System.out.println("Output file : " + outputFile + " is successfully saved ");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -103,18 +135,8 @@ public class UdpServer {
 		}
 	}
 
-	public long checkCRCValue(FileEvent event, long crcValue) {
-		// 다르면 -1 return
-		// 같으면 0 return
-		if(event.getCRC32Value() == crcValue) {
-			return 0; 
-		}
-		else {
-			return -1;
-		}
-	}
 	public static void main(String[] args) {
-		UdpServer server = new UdpServer(8000);
+		UdpServer server = new UdpServer(8001);
 		server.createAndListenSocket();
 	}
 }

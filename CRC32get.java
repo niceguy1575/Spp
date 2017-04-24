@@ -1,4 +1,4 @@
-package tcp;
+package udp_tcp;
 
 import java.io.*;
 import java.util.zip.*;
@@ -8,7 +8,7 @@ public class CRC32get {
    long CRC32Value;
 
    public long getCRC32(String Filepath,byte[] filesize){
-      System.out.println(filesize);
+//      System.out.println(filesize);
       return getCRC32Value(Filepath,filesize);
    }
 

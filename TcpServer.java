@@ -1,9 +1,7 @@
-package tcp;
+package udp_tcp;
 
 import java.io.*;
 import java.net.*;
-//import java.util.zip.*;
-import tcp.FileEvent;
 
 public class TcpServer {
 	int port = 8000;
@@ -16,7 +14,8 @@ public class TcpServer {
 	BufferedReader in;
 	PrintWriter out;
     CRC32get crc = new CRC32get();
-	
+    static double avgTime;
+    
 	public TcpServer (int port) {
 		try {
 			this.port = port;
@@ -55,7 +54,6 @@ public class TcpServer {
 			}
 			
 			String outputFile = fileEvent.getDestDir() + fileEvent.getFilename();
-			
 			// 경로가 없으면 새로 만든다.
 			if (!new File(fileEvent.getDestDir()).exists()) {
 				new File(fileEvent.getDestDir()).mkdirs();
@@ -67,29 +65,19 @@ public class TcpServer {
 			fileOutputStream.write(fileEvent.getFileData());
 			fileOutputStream.flush();
 			fileOutputStream.close();
-			//전송속도
-			long totaltime = System.currentTimeMillis()-fileEvent.gettime();
+			long totaltime = System.currentTimeMillis() - fileEvent.gettime();
+			long s = fileEvent.getFileSize();
+			avgTime += s/(totaltime * 1000);
 			
-			if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getSrcDir(),fileEvent.getFileData())) == 0 ) {
-//				System.out.format("보낸 파일의 CRC32값은 %08X 입니다.\n",fileEvent.getCRC32Value());
-				long s = fileEvent.getFileSize();
-				System.out.format("무결성 보장!\n");
-				System.out.println("file 전송속도 : "+s/(totaltime*1000)+"Mb/s");
-			} else {
-				System.out.format("무결성을 보장할 수 없습니다!\n");
-			}
-			
-			if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getSrcDir(),fileEvent.getFileData())) == 0 ) {
-//				System.out.format("보낸 파일의 CRC32값은 %08X 입니다.\n",fileEvent.getCRC32Value());
+			if(checkCRCValue(fileEvent, crc.getCRC32(outputFile,fileEvent.getFileData())) == 0 ) {
 				System.out.format("무결성 보장!\n");
 			} else {
 				System.out.format("무결성을 보장할 수 없습니다!\n");
 			}
 			
 			System.out.println("Output file : " + outputFile + "is successfully saved");
-			
+
 			Thread.sleep(3000);
-					
 		} catch (IOException e) {
 			System.out.println(e.toString());			
 		}catch (ClassNotFoundException e) {
@@ -110,13 +98,17 @@ public class TcpServer {
 		}
 	}
 	
-	public void receive() {
+	public String receive() {
+		String mesg = null;
 		try {
 			//서버 소켓으로부터 받은 메시지를 화면에 출력
-			System.out.println("[서버] "+ in.readLine());		
+//			System.out.println("[서버] "+ in.readLine());
+			mesg = in.readLine();
+			return mesg;
 		} catch (IOException e) {
 			System.out.println(e.toString());			
 		}
+		return mesg;
 	}
 	
 	public void send(String msg) {
@@ -144,9 +136,20 @@ public class TcpServer {
 	}
 	
 	public static void main(String[] args) {
+		String metaData;
 		TcpServer server = new TcpServer(8000);
 		server.waitForClient();
-		server.receiveFile();
+		metaData = server.receive();
+		server.send("continue");
+		
+		for(int i = 0 ; i < Integer.parseInt(metaData) ; i ++) {
+			server.receiveFile();
+			server.send("continue");
+		}
+		
+		System.out.println("file 전송속도 : "+ 1000 * avgTime / Long.valueOf(Integer.parseInt(metaData))  + "bps");
+		System.out.println("file 전송속도 : "+ avgTime / Long.valueOf(Integer.parseInt(metaData))  + "Mb/s");
+		
 		server.send("파일을 잘 받았습니다!");
 		server.close();
 	}

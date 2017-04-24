@@ -1,8 +1,7 @@
-package tcp;
+package udp_tcp;
 
 import java.io.*;
 import java.net.*;
-import tcp.FileEvent;
 
 public class TcpClient {
 	Socket socket;
@@ -38,13 +37,17 @@ public class TcpClient {
 		}
 	}
 	
-	public void receive() {
+	public String receive() {
+		String mesg = null;
 		try {
 			//서버 소켓으로부터 받은 메시지를 화면에 출력
-			System.out.println("[서버] "+ in.readLine());		
+//			System.out.println("[서버] "+ in.readLine());
+			mesg = in.readLine();
+			return mesg;
 		} catch (IOException e) {
 			System.out.println(e.toString());			
 		}
+		return mesg;
 	}
 	
 	public void send(String msg) {
@@ -54,59 +57,57 @@ public class TcpClient {
 		System.out.println("[클라이언트] " + msg);		
 	}
 	
-	public void sendFile() {
-		
+	public void sendFile(String srcPath) {
 		FileEvent fileEvent = new FileEvent();
 		
-		String fileName = srcPath.substring(srcPath.lastIndexOf("/") + 1, srcPath.length());
+		String fileName = srcPath.substring(srcPath.lastIndexOf("\\") + 1, srcPath.length());
 		//String path = srcPath.substring(0, srcPath.lastIndexOf("/") + 1);
-		
 		fileEvent.setDestDir(destPath);
 		fileEvent.setFilename(fileName);
 		fileEvent.setSrcDir(srcPath);
 		
 		File file = new File(srcPath);
-		
-		if (file.isFile()) {
-			try {
-				DataInputStream diStream = new DataInputStream(new FileInputStream(file));
-				long len = (int) file.length();
-				byte[] fileBytes = new byte[(int) len];
-				
-				int read = 0;
-				int numRead = 0;
-				while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
-					read = read + numRead;
+
+			if (file.isFile()) {
+				try {
+					DataInputStream diStream = new DataInputStream(new FileInputStream(file));
+					long len = (int) file.length();
+					byte[] fileBytes = new byte[(int) len];
+					
+					int read = 0;
+					int numRead = 0;
+					while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
+						read = read + numRead;
+					}
+					
+					long startTime = System.currentTimeMillis();
+					fileEvent.settime(startTime);
+					fileEvent.setFileSize(len);
+					fileEvent.setFileData(fileBytes);
+					fileEvent.setStatus("Success");
+					fileEvent.setCRC32Value(crc.getCRC32(srcPath,fileBytes));
+					
+					diStream.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+					fileEvent.setStatus("Error");
 				}
-				long startTime = System.currentTimeMillis();
-				fileEvent.settime(startTime);
-				fileEvent.setFileSize(len);
-				fileEvent.setFileData(fileBytes);
-				fileEvent.setStatus("Success");
-				fileEvent.setCRC32Value(crc.getCRC32(srcPath,fileBytes));
-				
-				diStream.close();
-			} catch (Exception e) {
-				e.printStackTrace();
+			} else {
+				System.out.println("path is not pointing to a file");
 				fileEvent.setStatus("Error");
+				System.out.println("TCP client를 종료합니다.");
+				System.exit(0);
 			}
-		} else {
-			System.out.println("path is not pointing to a file");
-			fileEvent.setStatus("Error");
-			System.out.println("TCP client를 종료합니다.");
-			System.exit(0);
-		}
-		
-		// write file
-		try {
-			outputStream.writeObject(fileEvent);
-			System.out.println("파일 전송 완료");
-			Thread.sleep(3000);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+			// write file
+			try {
+				outputStream.writeObject(fileEvent);
+				System.out.println("파일 전송 완료");
+				Thread.sleep(3000);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 	}
 	
 	public void close() {
@@ -124,14 +125,5 @@ public class TcpClient {
 		System.out.println("     서버 주소: " + socket.getInetAddress());
 		System.out.println("     서버 포트번호: " + socket.getPort());
 		System.out.println("     클라이인트 포트번호: " + socket.getLocalPort() + '\n');
-	}
-	
-	public static void main(String[] args) {
-		//서버 주소와 포트번호를 지정하여 서버에 접속
-		TcpClient client = new TcpClient("192.168.0.18", 8000, "C:/Users/YunSeob/Downloads/ch03.ppt", "C:/Users/YunSeob/Downloads/test/");
-		client.sendFile();
-		client.receive();
-		client.close();
-		
 	}
 }

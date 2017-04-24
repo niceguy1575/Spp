@@ -1,7 +1,6 @@
-package tcp;
+package udp_tcp;
 
 import java.io.Serializable;
-//import java.util.zip.*;
 
 public class FileEvent implements Serializable {
 
