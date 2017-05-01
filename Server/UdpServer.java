@@ -1,7 +1,9 @@
-package udp_tcp;
+package Server;
 
 import java.io.*;
 import java.net.*;
+
+import metaEvent.*;
 
 public class UdpServer {
 	DatagramSocket dsock;
@@ -69,7 +71,8 @@ public class UdpServer {
 					
 					long totaltime = System.currentTimeMillis() - fileEvent.gettime();
 					long s = fileEvent.getFileSize();
-					avgTime += (double)s/(totaltime * 1000);
+					
+					avgTime += (double) s/(totaltime * 1000);
 					
 					if (fileEvent.getStatus().equalsIgnoreCase("Error")) {
 						System.out.println("Errors happened! while data packing");
@@ -77,7 +80,6 @@ public class UdpServer {
 					}
 					createAndWriteFile();
 					cnt = cnt - 1;
-					
 					if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getDestDir() + fileEvent.getFilename(), fileEvent.getFileData())) == 0 ) {
 						System.out.format("무결성 보장!\n");
 					} else {

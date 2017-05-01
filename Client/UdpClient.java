@@ -1,7 +1,8 @@
-package udp_tcp;
+package Client;
 
 import java.io.*;
 import java.net.*;
+import fileEvent.*;
 
 public class UdpClient {
 	DatagramSocket dsock;
@@ -10,6 +11,7 @@ public class UdpClient {
 	int port = 8001;
 	String srcPath, destPath;
 	FileEvent event;
+	CRC32get crc = new CRC32get();
 
 	public UdpClient(String ip, int port, String srcPath, String destPath) {
 		try{
@@ -117,6 +119,7 @@ public class UdpClient {
 				fileEvent.setFileSize(len);
 				fileEvent.setFileData(fileBytes);
 				fileEvent.setStatus("Success");
+				fileEvent.setCRC32Value(crc.getCRC32(srcPath,fileBytes));
 				diStream.close();
 			} catch (Exception e) {
 				e.printStackTrace();

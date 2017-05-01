@@ -1,4 +1,4 @@
-package udp_tcp;
+package Client;
 
 import java.io.File;
 import java.util.*;

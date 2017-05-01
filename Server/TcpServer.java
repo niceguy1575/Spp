@@ -1,7 +1,9 @@
-package udp_tcp;
+package Server;
 
 import java.io.*;
 import java.net.*;
+
+import metaEvent.*;
 
 public class TcpServer {
 	int port = 8000;
@@ -67,7 +69,7 @@ public class TcpServer {
 			fileOutputStream.close();
 			long totaltime = System.currentTimeMillis() - fileEvent.gettime();
 			long s = fileEvent.getFileSize();
-			avgTime += s/(totaltime * 1000);
+			avgTime += (double) s/(totaltime * 1000);
 			
 			if(checkCRCValue(fileEvent, crc.getCRC32(outputFile,fileEvent.getFileData())) == 0 ) {
 				System.out.format("무결성 보장!\n");
@@ -147,8 +149,8 @@ public class TcpServer {
 			server.send("continue");
 		}
 		
-		System.out.println("file 전송속도 : "+ 1000 * avgTime / Long.valueOf(Integer.parseInt(metaData))  + "bps");
-		System.out.println("file 전송속도 : "+ avgTime / Long.valueOf(Integer.parseInt(metaData))  + "Mb/s");
+		System.out.println("file 전송속도 : "+ 1000 * avgTime / (double) Integer.parseInt(metaData)  + "bps");
+		System.out.println("file 전송속도 : "+ avgTime / (double) Integer.parseInt(metaData)  + "Mb/s");
 		
 		server.send("파일을 잘 받았습니다!");
 		server.close();

@@ -1,7 +1,8 @@
-package udp_tcp;
+package Client;
 
 import java.io.*;
 import java.net.*;
+import fileEvent.*;
 
 public class TcpClient {
 	Socket socket;
