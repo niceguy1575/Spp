@@ -10,3 +10,4 @@ Updated.
 ## 2017-04-23 : Server side - transfer directory
 ## 2017-04-24 : Merge client with Server (Merge conflict solved.)
 ## 2017-05-01 : Issue 1-3 solved.
+## 2017-05-12 : Connect with Trello.
