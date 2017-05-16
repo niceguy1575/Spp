@@ -1,7 +1,8 @@
-package udp_tcp;
+package Client;
 
 import java.io.*;
 import java.net.*;
+import metaEvent.*;
 
 public class TcpClient {
 	Socket socket;
@@ -67,17 +68,23 @@ public class TcpClient {
 		fileEvent.setSrcDir(srcPath);
 		
 		File file = new File(srcPath);
-
+		long len = (int) file.length();
+		byte[] fileBytes = new byte[(int) len];
+		
+		int read = 0;
+		int numRead = 0;
+		int cnt = 0;
+		double reading = fileBytes.length / 6;
+		
 			if (file.isFile()) {
 				try {
 					DataInputStream diStream = new DataInputStream(new FileInputStream(file));
-					long len = (int) file.length();
-					byte[] fileBytes = new byte[(int) len];
-					
-					int read = 0;
-					int numRead = 0;
-					while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
+
+					while (read < fileBytes.length &&
+							(numRead = diStream.read(fileBytes, read, (int) reading / 5)) >= 0
+							&& cnt < 10) {
 						read = read + numRead;
+						cnt++;
 					}
 					
 					long startTime = System.currentTimeMillis();
@@ -86,6 +93,8 @@ public class TcpClient {
 					fileEvent.setFileData(fileBytes);
 					fileEvent.setStatus("Success");
 					fileEvent.setCRC32Value(crc.getCRC32(srcPath,fileBytes));
+					fileEvent.setLen(len);
+					fileEvent.setRead(read);
 					
 					diStream.close();
 				} catch (Exception e) {

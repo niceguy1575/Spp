@@ -1,4 +1,4 @@
-package udp_tcp;
+package metaEvent;
 
 import java.io.Serializable;
 
@@ -17,6 +17,24 @@ public class FileEvent implements Serializable {
 	private String status;
     private long crcRes;
     private long time;
+    private long fileByteLen;
+    private long read;
+    
+    public void setLen(long fileByteLen){
+    	this.fileByteLen = fileByteLen;
+    }
+    
+    public long getLen() {
+    	return fileByteLen;
+    }
+    
+    public void setRead(long read) {
+    	this.read = read;
+    }
+    
+    public long getRead(){
+    	return read;
+    }
     
     public void settime(long time){
     	this.time = time;

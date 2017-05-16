@@ -1,7 +1,9 @@
-package udp_tcp;
+package Server;
 
 import java.io.*;
 import java.net.*;
+
+import metaEvent.*;
 
 public class TcpServer {
 	int port = 8000;
@@ -67,17 +69,35 @@ public class TcpServer {
 			fileOutputStream.close();
 			long totaltime = System.currentTimeMillis() - fileEvent.gettime();
 			long s = fileEvent.getFileSize();
-			avgTime += s/(totaltime * 1000);
+			avgTime += Math.round((double) s/(totaltime * 1000) * 100d);
+
+			if(checkCRCValue(fileEvent, crc.getCRC32(outputFile,fileEvent.getFileData())) == 0 ) {
+				System.out.format("무결성 보장!\n");
+			} else {
+				System.out.format("무결성을 보장할 수 없습니다!\n");
+			}
 			
 			System.out.println("Output file : " + outputFile + "is successfully saved");
 
 			Thread.sleep(3000);
+			
 		} catch (IOException e) {
 			System.out.println(e.toString());			
 		}catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public long checkCRCValue(FileEvent event, long crcValue) {
+		// 다르면 -1 return
+		// 같으면 0 return
+		if(event.getCRC32Value() == crcValue) {
+			return 0; 
+		}
+		else {
+			return -1;
 		}
 	}
 	
@@ -127,13 +147,14 @@ public class TcpServer {
 		
 		for(int i = 0 ; i < Integer.parseInt(metaData) ; i ++) {
 			server.receiveFile();
-			server.send("continue");
+			if( i == Integer.parseInt(metaData) - 1) {
+				server.send(String.valueOf(avgTime));
+			}
+			else {
+				server.send("continue");
+			}
 		}
 		
-		System.out.println("file 전송속도 : "+ 1000 * avgTime / Long.valueOf(Integer.parseInt(metaData))  + "bps");
-		System.out.println("file 전송속도 : "+ avgTime / Long.valueOf(Integer.parseInt(metaData))  + "Mb/s");
-		
-		server.send("파일을 잘 받았습니다!");
 		server.close();
 	}
 }
