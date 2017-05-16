@@ -2,7 +2,7 @@ package Client;
 
 import java.io.*;
 import java.net.*;
-import fileEvent.*;
+import metaEvent.*;
 
 public class TcpClient {
 	Socket socket;
@@ -71,16 +71,19 @@ public class TcpClient {
 
 			if (file.isFile()) {
 				try {
-					DataInputStream diStream = new DataInputStream(new FileInputStream(file));
+//					DataInputStream diStream = new DataInputStream(new FileInputStream(file));
 					long len = (int) file.length();
 					byte[] fileBytes = new byte[(int) len];
-					
-					int read = 0;
-					int numRead = 0;
-					while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
-						read = read + numRead;
-					}
-					
+
+//					int read = 0;
+//					int numRead = 0;
+//					while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
+//						read = read + numRead;
+////					    if(){
+////		                     System.exit(0);
+////		                  }
+//					}
+//					
 					long startTime = System.currentTimeMillis();
 					fileEvent.settime(startTime);
 					fileEvent.setFileSize(len);
@@ -88,7 +91,17 @@ public class TcpClient {
 					fileEvent.setStatus("Success");
 					fileEvent.setCRC32Value(crc.getCRC32(srcPath,fileBytes));
 					
-					diStream.close();
+					System.out.println((int) fileBytes.length+"\n");
+
+					for(int i=0; i<fileBytes.length; i++){
+						System.out.println(fileBytes[i]);
+					}
+//					System.out.println();
+//					for(int i=0; i<sendBytes.length; i++){
+//					System.out.println(sendBytes[i]);
+//			}
+					
+//					diStream.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 					fileEvent.setStatus("Error");

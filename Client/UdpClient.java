@@ -2,7 +2,11 @@ package Client;
 
 import java.io.*;
 import java.net.*;
-import fileEvent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import metaEvent.*;
 
 public class UdpClient {
 	DatagramSocket dsock;
@@ -12,7 +16,8 @@ public class UdpClient {
 	String srcPath, destPath;
 	FileEvent event;
 	CRC32get crc = new CRC32get();
-
+	static String speedMsg;
+	
 	public UdpClient(String ip, int port, String srcPath, String destPath) {
 		try{
 			server = InetAddress.getByName(ip);
@@ -27,7 +32,7 @@ public class UdpClient {
 		}
 	}
 	
-	public void createConnection(){
+	public String createConnection(int idx){
 		
 		
 		/*
@@ -42,9 +47,38 @@ public class UdpClient {
 				File directory = new File(srcPath);
 				File[] fList = directory.listFiles();
 				String len = String.valueOf(fList.length);
-				// 1. file length
 				
-				String strOut = len;
+				double KB;
+				int i;
+				
+				List<Double> kbArr = new ArrayList<Double>();
+
+				for(File file:fList) {
+					KB = file.length()/1024;
+					kbArr.add(KB);
+				}
+
+				List<Double> kbIdx = new ArrayList<Double>(kbArr);
+
+//				Collections.sort(kbArr);
+				Collections.sort(kbArr ,Collections.reverseOrder());
+				int[] indexes = new int[kbArr.size()];
+				
+				for(i = 0 ; i < kbArr.size() ; i ++) {
+					indexes[i] = kbArr.indexOf(kbIdx.get(i));
+				}
+								
+				File[] tempList = directory.listFiles();	
+
+				for(i = 0 ; i < fList.length; i++) {
+//					System.out.println("path : " + tempList[i]);
+					tempList[indexes[i]] = fList[i];
+//					System.out.println("changed : " + tempList[indexes[i]]);
+				}
+				fList = tempList;
+				
+				// 1. file length
+				String strOut = String.valueOf(idx);
 				byte[] strOutByte = strOut.getBytes();
 				
 				// file length send
@@ -52,14 +86,13 @@ public class UdpClient {
 				dsock.send(sPack);
 				
 				byte[] inputData = new byte[1024 * 64];
-				
-				// 2. length receive
+				// 2. response receive
 
 				rPack = new DatagramPacket(inputData, inputData.length);
 				dsock.receive(rPack);
 
 				String response = new String(rPack.getData());
-				for(int i = 0 ; i < Integer.parseInt(len); i ++){					
+				for(i = idx ; i < Integer.parseInt(len); i ++){					
 					if(response.charAt(0) == 'c') {
 						event = getFileEvent(fList[i].getAbsolutePath());
 						
@@ -73,11 +106,15 @@ public class UdpClient {
 						sPack = new DatagramPacket(data, data.length, server, port);
 						
 						dsock.send(sPack);
+						
 						Thread.sleep(2000);
 					}
 				}
+				
+				dsock.receive(rPack);
+				speedMsg = new String(rPack.getData());
 				System.out.println("UDP client를 종료합니다.");
-				System.exit(0);
+				return speedMsg;
 			}
 			
 		} catch (UnknownHostException e) {
@@ -89,6 +126,8 @@ public class UdpClient {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		
+		return speedMsg;
 	}
 	
 	public FileEvent getFileEvent(String srcPath) {

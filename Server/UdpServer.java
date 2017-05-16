@@ -3,6 +3,8 @@ package Server;
 import java.io.*;
 import java.net.*;
 
+import javax.swing.JOptionPane;
+
 import metaEvent.*;
 
 public class UdpServer {
@@ -13,7 +15,7 @@ public class UdpServer {
 	FileEvent fileEvent;
     CRC32get crc = new CRC32get();
 	static double avgTime;
-	
+
 	public UdpServer(int sport) {
 		try{
 			this.sport = sport;
@@ -26,7 +28,7 @@ public class UdpServer {
 			System.out.println(e);
 		}
 	}
-	
+
 	public void createAndListenSocket(){
 		
 		
@@ -52,15 +54,14 @@ public class UdpServer {
 				String length = new String(rPack.getData());
 				char len = length.charAt(0);
 				int cnt = Character.getNumericValue(len);
-				long fileCnt = cnt;
-				while(cnt > 0) {
-					String strOut = "c";
-					byte[] strOutByte = strOut.getBytes();
-					
-					sPack = new DatagramPacket(strOutByte, strOutByte.length, client, cport);
-					dsock.send(sPack);
-					
-
+				
+				String strOut = "c";
+				byte[] strOutByte = strOut.getBytes();
+				
+				sPack = new DatagramPacket(strOutByte, strOutByte.length, client, cport);
+				dsock.send(sPack);
+				
+				while(cnt > 0) {				
 					dsock.receive(rPack);	
 
 					byte[] data = rPack.getData();
@@ -72,12 +73,13 @@ public class UdpServer {
 					long totaltime = System.currentTimeMillis() - fileEvent.gettime();
 					long s = fileEvent.getFileSize();
 					
-					avgTime += (double) s/(totaltime * 1000);
+					avgTime += Math.round((double) s/(totaltime * 1000) * 100d );
 					
 					if (fileEvent.getStatus().equalsIgnoreCase("Error")) {
 						System.out.println("Errors happened! while data packing");
 						System.exit(0);
 					}
+					
 					createAndWriteFile();
 					cnt = cnt - 1;
 					if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getDestDir() + fileEvent.getFilename(), fileEvent.getFileData())) == 0 ) {
@@ -86,9 +88,13 @@ public class UdpServer {
 						System.out.format("무결성을 보장할 수 없습니다!\n");
 					}
 				}
-				System.out.println("file 전송속도 : "+ 1000 * avgTime / (double)fileCnt  + "bps");
-				System.out.println("file 전송속도 : "+ avgTime / (double)fileCnt  + "Mb/s");
 				
+				String speed = String.valueOf(avgTime);
+				byte[] speedOutByte = speed.getBytes();
+
+				sPack = new DatagramPacket(speedOutByte, speedOutByte.length, client, cport);
+				dsock.send(sPack);
+			
 				Thread.sleep(3000);
 				System.out.println("UDP 서버를 종료합니다.");
 				System.exit(0);
@@ -123,10 +129,25 @@ public class UdpServer {
 		
 		File dstFile = new File(outputFile);
 		FileOutputStream fileOutputStream = null;
-		
+		long existFileSize = 0;
+		int result = 1; // ConfirmDialog 반환값.
+		   if(!dstFile.exists()){
+		    // 없으면,
+		   }else{
+		    // 잇으면,
+		    result = JOptionPane.showConfirmDialog(null, "' 다음 경로에 \n" + fileEvent.getDestDir()+ "\n"+fileEvent.getFilename()+"가 이미 존재합니다. 이어받기 하시겠습니까?");
+		    if(result == 0){    // 예
+		     existFileSize = dstFile.length();
+		    }else if(result == 1){  // 아니오.
+		     existFileSize = 0;
+		    }
+		   }
+		   
 		try {
-			fileOutputStream = new FileOutputStream(dstFile);
-			fileOutputStream.write(fileEvent.getFileData());
+			fileOutputStream = new FileOutputStream(dstFile,true);
+			long len = existFileSize;
+			byte[] fileBytes = new byte[(int) len];
+			fileOutputStream.write(fileEvent.getFileData(),fileBytes.length,fileEvent.getFileData().length-fileBytes.length);
 			fileOutputStream.flush();
 			fileOutputStream.close();
 			System.out.println("Output file : " + outputFile + " is successfully saved ");

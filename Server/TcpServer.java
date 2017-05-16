@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.*;
 
 import metaEvent.*;
+import javax.swing.JOptionPane;
+
 
 public class TcpServer {
 	int port = 8000;
@@ -60,13 +62,31 @@ public class TcpServer {
 			if (!new File(fileEvent.getDestDir()).exists()) {
 				new File(fileEvent.getDestDir()).mkdirs();
 			}
-			
 			dstFile = new File(outputFile);
-			
-			fileOutputStream = new FileOutputStream(dstFile);
-			fileOutputStream.write(fileEvent.getFileData());
+			long existFileSize = 0;
+			int result = 1; // ConfirmDialog 반환값.
+			   if(!dstFile.exists()){
+			    // 없으면,
+			   }else{
+			    // 잇으면,
+			    result = JOptionPane.showConfirmDialog(null, "' 다음 경로에 \n" + fileEvent.getDestDir()+ "\n"+fileEvent.getFilename()+"가 이미 존재합니다. 이어받기 하시겠습니까?");
+			    if(result == 0){    // 예
+			     existFileSize = dstFile.length();
+			    }else if(result == 1){  // 아니오.
+			     existFileSize = 0;
+			    }
+			   }
+
+			fileOutputStream = new FileOutputStream(dstFile,true);
+			long len = existFileSize;
+			byte[] fileBytes = new byte[(int) len];
+			System.out.format("dstFile %d \n",fileBytes.length);
+			System.out.format("getFileData %d\n",fileEvent.getFileData().length);
+			fileOutputStream.write(fileEvent.getFileData(),fileBytes.length,fileEvent.getFileData().length-fileBytes.length);
 			fileOutputStream.flush();
 			fileOutputStream.close();
+	
+
 			long totaltime = System.currentTimeMillis() - fileEvent.gettime();
 			long s = fileEvent.getFileSize();
 			avgTime += (double) s/(totaltime * 1000);
