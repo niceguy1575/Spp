@@ -1,10 +1,7 @@
 package Server;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
+import java.util.*;
 import org.rosuda.REngine.*;
 import org.rosuda.REngine.Rserve.*;
 
@@ -21,9 +18,9 @@ public class Rserv {
            System.out.println("R version : " + x.asString());
     }
     
-    public void save_file(String destPath, String fileName, List<String> ...line) {
+    public void save_file(String destPath, String Unique, String fileName, List<String> ...line) {
     	
-    	String fname = destPath + fileName;
+    	String fname = destPath + Unique + "-" + fileName;
     	File f = new File(fname);
     	try{
     		f.createNewFile();
@@ -49,7 +46,7 @@ public class Rserv {
         c.assign("src", srcPath);
         
         String extension = srcPath.substring(srcPath.length()-3, srcPath.length());
-
+        
         // data reading        
         if( extension.equals("txt")) {
         	c.voidEval("data<-read.table(src, stringsAsFactors = F, header = T)");
@@ -58,7 +55,7 @@ public class Rserv {
         }
     }    
     
-    public void summary(String variable) throws RserveException, REXPMismatchException {
+    public void summary(String destPath, String variable) throws RserveException, REXPMismatchException {
     		
     	   String var = "data$" + variable;
     	   c.voidEval("summary = summary(" + var + ")");
@@ -67,10 +64,10 @@ public class Rserv {
            String[] names = c.eval( "names(summary)").asStrings();
 		   List<String> valueList = new ArrayList<String>(Arrays.asList(value));
 		   List<String> namesList = new ArrayList<String>(Arrays.asList(names));
-		   save_file("C:/prac/","vectorSummary.txt",namesList, valueList);
+		   save_file(destPath,variable, "vectorSummary.txt", namesList, valueList);
     }
 
-    public void linearModel(String response, String ...indep) throws REngineException, REXPMismatchException {
+    public void linearModel(String destPath, String response, String ...indep) throws REngineException, REXPMismatchException {
     	   int i;
     	              
            // model construct
@@ -90,7 +87,7 @@ public class Rserv {
            String modelPart4 = ", data = data )";
            
            String modelStr = modelPart1 + modelPart2 + modelPart3 + modelPart4; 
-
+           System.out.println(modelStr);
            // model show
            c.voidEval(modelStr);
     	   String[] value = c.eval( "as.vector(coefficients(m))" ).asStrings();
@@ -98,16 +95,17 @@ public class Rserv {
 		   List<String> valueList = new ArrayList<String>(Arrays.asList(value));
 		   List<String> namesList = new ArrayList<String>(Arrays.asList(names));
 
-		   save_file("C:/prac/","linearModel.txt",namesList, valueList);
+		   save_file(destPath, response, "linearModel.txt",namesList, valueList);
     }
     
     public static void main(String[] args) throws REXPMismatchException, REngineException {
 
-       String srcPath = "C:/prac/freshman.csv";
+       String srcPath = "C:/prac/BGSgirls.txt";
+       String destPath = "C:/prac1/";
        Rserv Rserv = new Rserv();
        
        Rserv.read_file(srcPath);
-       Rserv.linearModel("first", "year", "gender");
-       Rserv.summary("year");
+       Rserv.linearModel(destPath, "first", "year", "gender");
+       Rserv.summary(destPath, "year");
     }
 }
