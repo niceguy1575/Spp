@@ -2,87 +2,61 @@ package Client;
 
 import java.io.File;
 import java.util.*;
+import metaEvent.*;
 
 public class clientUI {
+			
 	public static void main(String[] args) {
+		
+		KBArray KBArr = new KBArray();
+		
+		System.out.println("Welcome! We are Statistic Analysis Server!");
 
-		System.out.println("------------ 접속할 IP주소를 입력해주세요 -------------------");
-		System.out.println("----------------------------------------------------");
-		System.out.println("   > ");
+		System.out.println("------------ IP Address -----------------");
+		System.out.println("-----------------------------------------");
+		System.out.print("   > ");
 
 		Scanner ipScan = new Scanner(System.in);
 		String ipAdr = ipScan.nextLine();
-		System.out.println("ip address : " + ipAdr);
-				
-		System.out.println("------------------------------------------");
-		System.out.println("------------ 경로를 입력해 주세요 ------------");
-		System.out.println("------------------------------------------");
-		System.out.println("------------ 1. SrcPath ---------------");
-		System.out.println("------------------------------------------");
-		System.out.println("   > ");
-		Scanner pathScan = new Scanner(System.in);
-		String srcPath = pathScan.nextLine();
-		
-		System.out.println("------------------------------------------");
-		System.out.println("------------ 2. destPath ---------------");
-		System.out.println("------------------------------------------");
-		System.out.println("   > ");
-		String destPath = pathScan.nextLine();
-
-		
-		srcPath = "C:\\prac\\";
-		destPath = "C:\\prac1\\";
-
-		pathScan.close();
 		ipScan.close();
-		
-		File directory = new File(srcPath);
-		File[] fList = directory.listFiles();	
-		
-		double KB;
-		int i;
-		
-		List<Double> kbArr = new ArrayList<Double>();
 
-		for(File file:fList) {
-			KB = file.length()/1024;
-			kbArr.add(KB);
-		}
-
-		List<Double> kbIdx = new ArrayList<Double>(kbArr);
-
-//		Collections.sort(kbArr);
-		Collections.sort(kbArr ,Collections.reverseOrder());
-		int[] indexes = new int[kbArr.size()];
+		System.out.println();
+		System.out.println("-----------------------------------------");
+		System.out.println("------------ 1. 분석할 파일의 경로 ------------");
+		System.out.println("------ 분석파일이 저장된 경로를 입력해주세요. -------");
+		System.out.println("-- 분석파일은 독립변수와 반응변수로 구성되어있어야 합니다.-");
+		System.out.println("------- 또한 첫행은 각 변수의 이름을 넣어주세요 ------");
+		System.out.println("-----------------------------------------");
+		System.out.print("   > ");
+		Scanner pathScan = new Scanner(System.in);
+//		String srcPath = pathScan.nextLine();
 		
-		for(i = 0 ; i < kbArr.size() ; i ++) {
-			indexes[i] = kbArr.indexOf(kbIdx.get(i));
-		}
+		System.out.println("------------------------------------------");
+		System.out.println("----------- 2. 분셕결과를 저장할 경로 ------------");
+		System.out.println("------------------------------------------");
+		System.out.print("   > ");
+//		String destPath = pathScan.nextLine();
+		pathScan.close();
 		
-		File[] tempList = directory.listFiles();	
+		String srcPath = "C:\\prac\\";
+		String destPath = "C:\\prac1\\";
 
-		for(i = 0 ; i < fList.length; i++) {
-//			System.out.println("path : " + tempList[i]);
-			tempList[indexes[i]] = fList[i];
-//			System.out.println("changed : " + tempList[indexes[i]]);
-		}
-		fList = tempList;
-		
+		// Client Connect
 		TcpClient TCPclient = new TcpClient(ipAdr, 8000, srcPath, destPath);
 		UdpClient UDPclient = new UdpClient(ipAdr, 8001, srcPath, destPath);
-	
-		int idx = 0;
-		for(i = 0 ; i < kbArr.size(); i ++) {
-			if(kbArr.get(i) < 64 ) {
-				idx = i;
-				break;
-			}
-		}
+		
+		File[] fList = KBArr.revDir(srcPath);
+
+		List<Double> kbArr = new ArrayList<Double>();
+		kbArr = KBArr.KBArr(srcPath);
+		Collections.sort(kbArr ,Collections.reverseOrder());
+		
+		int idx = KBArr.idx_64(kbArr);
 
 		// 1. TCP
 		String goBack = null;
 		TCPclient.send(String.valueOf(idx));
-		for(i = 0 ; i < idx ; i ++) {
+		for(int i = 0 ; i < idx ; i ++) {
 			goBack = TCPclient.receive();
 			if(goBack.equals("continue")) {
 				TCPclient.sendFile(fList[i].getAbsolutePath());
@@ -93,6 +67,7 @@ public class clientUI {
 		System.out.println(TCPSpeed);
 		TCPclient.close();
 
+		//2. UDP
 		String UDPSpeed = UDPclient.createConnection(idx);
 		System.out.println(UDPSpeed);
 				
