@@ -1,5 +1,10 @@
 package Server;
 
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.rosuda.REngine.*;
 import org.rosuda.REngine.Rserve.*;
 
@@ -10,22 +15,46 @@ public class Rserv {
     public Rserv() throws RserveException {
            c = new RConnection();
     }
-
+       
     public void getRVersion() throws RserveException, REXPMismatchException {
            REXP x = c.eval("R.version.string");
            System.out.println("R version : " + x.asString());
+    }
+    
+    public void save_file(String destPath, String fileName, List<String> ...line) {
+    	
+    	String fname = destPath + fileName;
+    	File f = new File(fname);
+    	try{
+    		f.createNewFile();
+    		
+    		FileWriter fr = new FileWriter(f);
+    		
+    		for(int i = 0 ; i < line.length; i ++) {
+    			for(int j = 0 ; j < line[i].size(); j ++) {
+    				fr.write(line[i].get(j));
+    				fr.write(" ");
+    			}
+    			fr.write("\n");
+    		}
+    		fr.close();
+    	} catch(IOException e) {
+    		e.printStackTrace();
+    	}
+    	System.out.println( fname + "Correctly Saved!");
+    	
     }
     
     public void read_file(String srcPath) throws RserveException, REXPMismatchException {
         c.assign("src", srcPath);
         
         String extension = srcPath.substring(srcPath.length()-3, srcPath.length());
-        
+
         // data reading        
         if( extension.equals("txt")) {
-        	c.voidEval("data<-read.csv(src, stringsAsFactors = F, header = T)");
-        } else{
         	c.voidEval("data<-read.table(src, stringsAsFactors = F, header = T)");
+        } else{
+        	c.voidEval("data<-read.csv(src, stringsAsFactors = F, header = T)");
         }
     }    
     
@@ -34,11 +63,11 @@ public class Rserv {
     	   String var = "data$" + variable;
     	   c.voidEval("summary = summary(" + var + ")");
     	   
-           double[] d = c.eval( "as.vector(summary)" ).asDoubles();
-
-           for (int i = 0; i < d.length; i++) {
-                   System.out.println(d[i]);
-           }
+    	   String[] value = c.eval( "as.vector(summary)" ).asStrings();
+           String[] names = c.eval( "names(summary)").asStrings();
+		   List<String> valueList = new ArrayList<String>(Arrays.asList(value));
+		   List<String> namesList = new ArrayList<String>(Arrays.asList(names));
+		   save_file("C:/prac/","vectorSummary.txt",namesList, valueList);
     }
 
     public void linearModel(String response, String ...indep) throws REngineException, REXPMismatchException {
@@ -64,11 +93,12 @@ public class Rserv {
 
            // model show
            c.voidEval(modelStr);
-           double [] coeff = c.eval("coefficients(m)").asDoubles();
-           
-           for(i = 0 ; i < coeff.length; i++) {
-        	   System.out.println(coeff[i]);
-           }
+    	   String[] value = c.eval( "as.vector(coefficients(m))" ).asStrings();
+           String[] names = c.eval( "names(coefficients(m))").asStrings();
+		   List<String> valueList = new ArrayList<String>(Arrays.asList(value));
+		   List<String> namesList = new ArrayList<String>(Arrays.asList(names));
+
+		   save_file("C:/prac/","linearModel.txt",namesList, valueList);
     }
     
     public static void main(String[] args) throws REXPMismatchException, REngineException {
@@ -81,19 +111,3 @@ public class Rserv {
        Rserv.summary("year");
     }
 }
-
-
-
-//c.assign(response, response);
-//
-//for(i = 0 ; i < indep.length ; i ++) {
-//  c.assign(indep[i], indep[i]);
-//}
-//String x = "x";
-//String xarr[] = new String[indep.length];
-//for(i = 0 ; i < indep.length; i ++) {
-//  x = x + String.valueOf(i+1);
-//  c.assign(indep[i], indep[i]);
-//  xarr[i] = x;
-//  x = x.substring(0, x.length() -1);
-//}
