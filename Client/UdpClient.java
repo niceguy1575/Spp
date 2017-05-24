@@ -53,10 +53,10 @@ public class UdpClient {
 				kbArr = KBArr.KBArr(srcPath);
 				Collections.sort(kbArr ,Collections.reverseOrder());
 
-				// 1. file length
-				String strOut = String.valueOf(idx);
+				// 1. file length				
+				String strOut = String.valueOf(len);
 				byte[] strOutByte = strOut.getBytes();
-				
+
 				// file length send
 				sPack = new DatagramPacket(strOutByte, strOutByte.length, server, port);
 				dsock.send(sPack);

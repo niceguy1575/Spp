@@ -3,6 +3,9 @@ package Server;
 import java.io.*;
 import java.net.*;
 
+import org.rosuda.REngine.REXPMismatchException;
+import org.rosuda.REngine.REngineException;
+
 import metaEvent.*;
 
 public class UdpServer {
@@ -78,6 +81,7 @@ public class UdpServer {
 						System.exit(0);
 					}
 					createAndWriteFile();
+					Rprocess("year", "first", "first", "gender");
 					cnt = cnt - 1;
 					if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getDestDir() + fileEvent.getFilename(), fileEvent.getFileData())) == 0 ) {
 						System.out.format("무결성 보장!\n");
@@ -93,6 +97,7 @@ public class UdpServer {
 				dsock.send(sPack);
 			
 				Thread.sleep(3000);
+				
 				System.out.println("UDP 서버를 종료합니다.");
 				System.exit(0);
 			}
@@ -104,7 +109,24 @@ public class UdpServer {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		} catch (REXPMismatchException e) {
+			e.printStackTrace();
+		} catch (REngineException e) {
+			e.printStackTrace();
 		}
+	}
+
+	public void Rprocess(String response, String variable, String ...indep)  throws REXPMismatchException, REngineException {
+	        Rserv Rserv = new Rserv();
+	       
+			String resDir = fileEvent.getDestDir() + "\\Results\\";
+			if (!new File(resDir).exists()) {
+				new File(resDir).mkdirs();
+			}
+			
+	       Rserv.read_file( fileEvent.getDestDir() + fileEvent.getFilename() );
+	       Rserv.linearModel(resDir, response, indep);
+	       Rserv.summary(resDir, variable);
 	}
 	
 	public long checkCRCValue(FileEvent event, long crcValue) {
@@ -140,7 +162,7 @@ public class UdpServer {
 		}
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args)  {
 		UdpServer server = new UdpServer(8001);
 		server.createAndListenSocket();
 	}

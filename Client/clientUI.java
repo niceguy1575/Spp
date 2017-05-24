@@ -64,18 +64,17 @@ public class clientUI {
 		}
 		
 		String TCPSpeed = TCPclient.receive();
-		System.out.println(TCPSpeed);
 		TCPclient.close();
-
+		
 		//2. UDP
 		String UDPSpeed = UDPclient.createConnection(idx);
-		System.out.println(UDPSpeed);
 				
-		double finalSpeed = Double.parseDouble(TCPSpeed) + Double.parseDouble(UDPSpeed);
-		
-		finalSpeed = finalSpeed / fList.length;
-		System.out.println("file 전송속도 : "+ 1000 * Math.round(finalSpeed)  + "bps");
-		System.out.println("file 전송속도 : "+ Math.round(finalSpeed)  + "Mb/s");
+		System.out.println("Client를 종료합니다.");
+//		double finalSpeed = Double.parseDouble(TCPSpeed) + Double.parseDouble(UDPSpeed);
+//		
+//		finalSpeed = finalSpeed / fList.length;
+//		System.out.println("file 전송속도 : "+ 1000 * Math.round(finalSpeed)  + "bps");
+//		System.out.println("file 전송속도 : "+ Math.round(finalSpeed)  + "Mb/s");
 		System.exit(0);
 	}
 }
