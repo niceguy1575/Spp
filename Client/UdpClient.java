@@ -54,7 +54,7 @@ public class UdpClient {
 				Collections.sort(kbArr ,Collections.reverseOrder());
 
 				// 1. file length				
-				String strOut = String.valueOf(len);
+				String strOut = String.valueOf(idx);
 				byte[] strOutByte = strOut.getBytes();
 
 				// file length send
@@ -68,7 +68,7 @@ public class UdpClient {
 				dsock.receive(rPack);
 
 				String response = new String(rPack.getData());
-				for(int i = idx ; i < Integer.parseInt(len); i ++){					
+				for(int i = (fList.length - idx) ; i < Integer.parseInt(len); i ++){					
 					if(response.charAt(0) == 'c') {
 						event = getFileEvent(fList[i].getAbsolutePath());
 						

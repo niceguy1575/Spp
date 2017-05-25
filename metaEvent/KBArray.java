@@ -11,10 +11,10 @@ public class KBArray {
 		for(int i = 0 ; i < kbArr.size(); i ++) {
 			if(kbArr.get(i) < 64 ) {
 				idx = i;
-				break;
+				return idx;
 			}
 		}
-		return idx;
+		return kbArr.size() - 1;
 	}
 
 	public List<Double> KBArr(String srcPath) {

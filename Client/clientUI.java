@@ -1,6 +1,6 @@
 package Client;
 
-import java.io.File;
+import java.io.*;
 import java.util.*;
 import metaEvent.*;
 
@@ -51,24 +51,83 @@ public class clientUI {
 		kbArr = KBArr.KBArr(srcPath);
 		Collections.sort(kbArr ,Collections.reverseOrder());
 		
-		int idx = KBArr.idx_64(kbArr);
-
-		// 1. TCP
-		String goBack = null;
-		TCPclient.send(String.valueOf(idx));
-		for(int i = 0 ; i < idx ; i ++) {
-			goBack = TCPclient.receive();
-			if(goBack.equals("continue")) {
-				TCPclient.sendFile(fList[i].getAbsolutePath());
-			}
-		}
+		int k = KBArr.idx_64(kbArr);
+		int n = kbArr.size();
 		
-		String TCPSpeed = TCPclient.receive();
-		TCPclient.close();
 		
-		//2. UDP
-		String UDPSpeed = UDPclient.createConnection(idx);
+		try {
+			
+				if( k == n-1 ) {
+					if ( kbArr.get(k) > 64 ) {
+						// TCP n
+						String goBack = null;
+						TCPclient.send(String.valueOf( n ));
+						for(int i = 0 ; i < n ; i ++) {
+							goBack = TCPclient.receive();
+							if(goBack.equals("continue")) {
+								TCPclient.sendFile(fList[i].getAbsolutePath());
+							}
+						}
+					} else{
+						// TCP n-1, UDP 1
+						String goBack = null;
+						TCPclient.send(String.valueOf( n-1 ));
+						for(int i = 0 ; i < n-1 ; i ++) {
+							goBack = TCPclient.receive();
+							if(goBack.equals("continue")) {
+								TCPclient.sendFile(fList[i].getAbsolutePath());
+							}
+						}
+						Thread.sleep(10000);
+						String UDPSpeed = UDPclient.createConnection(1);
+					}
+				}
 				
+				else if( k == 0) {
+					if( kbArr.get(k) < 64 ) {
+						// do only UDP n
+						String UDPSpeed = UDPclient.createConnection(n);
+					}
+					else {
+						// TCP 1, UDP n-1
+						String goBack = null;
+						TCPclient.send(String.valueOf( 1 ));
+						for(int i = 0 ; i < 1 ; i ++) {
+							goBack = TCPclient.receive();
+							if(goBack.equals("continue")) {
+								TCPclient.sendFile(fList[i].getAbsolutePath());
+							}
+						}
+						
+						Thread.sleep(10000);
+						String UDPSpeed = UDPclient.createConnection( n-1 );
+					}
+				}
+				
+				else {
+					// TCP k-1, UDP n-k+1
+					String goBack = null;
+					TCPclient.send(String.valueOf( k ));
+					for(int i = 0 ; i < k ; i ++) {
+						goBack = TCPclient.receive();
+						if(goBack.equals("continue")) {
+							TCPclient.sendFile(fList[i].getAbsolutePath());
+						}
+					}
+					
+					String TCPSpeed = TCPclient.receive();
+					TCPclient.close();
+					
+					Thread.sleep(10000);
+		
+					String UDPSpeed = UDPclient.createConnection( n - k );
+				}
+				
+			}
+		 catch (InterruptedException e) {
+				e.printStackTrace();
+		 }
+		
 		System.out.println("Client를 종료합니다.");
 //		double finalSpeed = Double.parseDouble(TCPSpeed) + Double.parseDouble(UDPSpeed);
 //		
