@@ -38,7 +38,7 @@ public class Rserv {
     	} catch(IOException e) {
     		e.printStackTrace();
     	}
-    	System.out.println( fname + "Correctly Saved!");
+    	System.out.println( fname + " Correctly Saved!");
     	
     }
     
@@ -83,11 +83,10 @@ public class Rserv {
         		   modelPart3 = modelPart3 + indep[i] + "+";   
         	   }
            }
-           
            String modelPart4 = ", data = data )";
            
            String modelStr = modelPart1 + modelPart2 + modelPart3 + modelPart4; 
-           System.out.println(modelStr);
+
            // model show
            c.voidEval(modelStr);
     	   String[] value = c.eval( "as.vector(coefficients(m))" ).asStrings();
@@ -96,16 +95,5 @@ public class Rserv {
 		   List<String> namesList = new ArrayList<String>(Arrays.asList(names));
 
 		   save_file(destPath, response, "linearModel.txt",namesList, valueList);
-    }
-    
-    public static void main(String[] args) throws REXPMismatchException, REngineException {
-
-       String srcPath = "C:/prac/BGSgirls.txt";
-       String destPath = "C:/prac1/";
-       Rserv Rserv = new Rserv();
-       
-       Rserv.read_file(srcPath);
-       Rserv.linearModel(destPath, "first", "year", "gender");
-       Rserv.summary(destPath, "year");
     }
 }

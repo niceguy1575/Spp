@@ -2,6 +2,7 @@ package Server;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.REngineException;
@@ -16,7 +17,7 @@ public class UdpServer {
 	FileEvent fileEvent;
     CRC32get crc = new CRC32get();
 	static double avgTime;
-
+		
 	public UdpServer(int sport) {
 		try{
 			this.sport = sport;
@@ -81,7 +82,7 @@ public class UdpServer {
 						System.exit(0);
 					}
 					createAndWriteFile();
-					Rprocess("year", "first", "first", "gender");
+					scanAndAnalysis();
 					cnt = cnt - 1;
 					if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getDestDir() + fileEvent.getFilename(), fileEvent.getFileData())) == 0 ) {
 						System.out.format("무결성 보장!\n");
@@ -109,13 +110,46 @@ public class UdpServer {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-		} catch (REXPMismatchException e) {
-			e.printStackTrace();
-		} catch (REngineException e) {
-			e.printStackTrace();
 		}
 	}
 
+	public void scanAndAnalysis(){
+		fileReader fr = new fileReader();
+		Scanner headerScan = new Scanner(System.in);
+		Scanner headerNumScan = new Scanner(System.in);
+		List<String> header= new ArrayList<String>();
+		
+		header = fr.read_head(fileEvent.getDestDir() + fileEvent.getFilename());
+		
+		System.out.println("------------------------------ ");
+		System.out.println(" header 출력");
+		
+		for(String val : header) {
+			System.out.print(val + "\t");
+		}
+		System.out.println();
+		
+		System.out.print(" 반응 변수는 무엇입니까?    > ");
+		String response = headerScan.nextLine();
+		System.out.print(" 살펴볼 변수는 무엇입니까?    > ");
+		String variable = headerScan.nextLine();
+		System.out.print(" 몇개의 독립변수를 사용하시겠습니까?   > ");
+		int indepNum = headerNumScan.nextInt();
+		String indep[] = new String[indepNum];
+		
+		for(int i = 0 ; i < indepNum ; i ++){
+			System.out.print((i+1) + "번째 독립 변수는 무엇입니까?    > ");
+			indep[i] = headerScan.nextLine();
+		}
+		headerNumScan.close();
+		headerScan.close();
+		try {
+			Rprocess(response, variable, indep);
+		} catch (REXPMismatchException | REngineException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public void Rprocess(String response, String variable, String ...indep)  throws REXPMismatchException, REngineException {
 	        Rserv Rserv = new Rserv();
 	       
