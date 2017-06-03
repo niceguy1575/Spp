@@ -129,31 +129,43 @@ public class UdpServer {
 		}
 		System.out.println();
 		
-		System.out.print(" 반응 변수는 무엇입니까?    > ");
-		String response = headerScan.nextLine();
+		System.out.println("------ Summary ------");
 		System.out.print(" 살펴볼 변수는 무엇입니까?    > ");
 		String variable = headerScan.nextLine();
+		
+		System.out.print("Graphic : 1. histogram, 2. boxplot > ");
+		int value = headerNumScan.nextInt();
+		
+		System.out.println("------ Regression ------");
+
+		System.out.print(" 반응 변수는 무엇입니까?    > ");
+		String response = headerScan.nextLine();
+
 		System.out.print(" 몇개의 독립변수를 사용하시겠습니까?   > ");
 		int indepNum = headerNumScan.nextInt();
+		
 		String indep[] = new String[indepNum];
 		
 		for(int i = 0 ; i < indepNum ; i ++){
 			System.out.print((i+1) + "번째 독립 변수는 무엇입니까?    > ");
 			indep[i] = headerScan.nextLine();
 		}
+		
+		System.out.println("독립변수가 하나일 경우에는 linear model plot이 자동으로 그려집니다.");
+		
 		headerNumScan.close();
 		headerScan.close();
 		try {
-			Rprocess(response, variable, indep);
+			Rprocess(value, response, variable, indep);
 		} catch (REXPMismatchException | REngineException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public void Rprocess(String response, String variable, String ...indep)  throws REXPMismatchException, REngineException {
+	public void Rprocess(int value, String response, String variable, String ...indep)  throws REXPMismatchException, REngineException {
 	        Rserv Rserv = new Rserv();
 	       
-			String resDir = fileEvent.getDestDir() + "\\Results\\";
+			String resDir = fileEvent.getDestDir() + "Results\\";
 			if (!new File(resDir).exists()) {
 				new File(resDir).mkdirs();
 			}
@@ -161,6 +173,10 @@ public class UdpServer {
 	       Rserv.read_file( fileEvent.getDestDir() + fileEvent.getFilename() );
 	       Rserv.linearModel(resDir, response, indep);
 	       Rserv.summary(resDir, variable);
+	       Rserv.summary_plot(resDir, variable, value);
+	       if(indep.length == 1) {
+		       Rserv.lm_plot(resDir, response, indep);
+	       }
 	}
 	
 	public long checkCRCValue(FileEvent event, long crcValue) {

@@ -54,7 +54,6 @@ public class clientUI {
 		int k = KBArr.idx_64(kbArr);
 		int n = kbArr.size();
 		
-		
 		try {
 			
 				if( k == n-1 ) {

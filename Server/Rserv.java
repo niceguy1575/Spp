@@ -39,7 +39,6 @@ public class Rserv {
     		e.printStackTrace();
     	}
     	System.out.println( fname + " Correctly Saved!");
-    	
     }
     
     public void read_file(String srcPath) throws RserveException, REXPMismatchException {
@@ -96,4 +95,44 @@ public class Rserv {
 
 		   save_file(destPath, response, "linearModel.txt",namesList, valueList);
     }
+    
+    public void summary_plot(String destPath, String variable, int select) throws REXPMismatchException, REngineException {
+        String saveFileName, png, ggplot;
+        
+        if(select == 1){
+           saveFileName = destPath + variable + "_hist.png";
+              png = "png(file = \"" + saveFileName + "\")";
+              ggplot = "print(ggplot(data=data, aes(x=" + variable + ") ) + "+ "geom_histogram()); dev.off()";
+        }
+        
+        else{
+           saveFileName = destPath + variable + "_boxplot.png";
+           png = "png(file = \"" + saveFileName + "\")";
+           ggplot = "print(ggplot(data=data, aes(x= 1, y =" + variable + ") ) + "+ "geom_boxplot() ); dev.off()";
+        }
+        
+        png = png.replaceAll("\\\\", "/");
+         c.eval("library(ggplot2)");
+         c.eval("require(ggplot2)");
+         c.eval(png);
+         c.parseAndEval(ggplot); 
+      }
+    
+    
+    // 변수 1개일때 그림 표시
+	  public void lm_plot(String destPath, String response, String ...indep) throws REXPMismatchException, REngineException {
+			
+		   String jpegFile = destPath + response + "-" + indep[0] + "_linearmodel.png";
+		   String png = "png(file = \"" + jpegFile + "\")";
+//		   String plot = "plot(" + indep[0] + "," + response + ", main = \"Scatter plot of linear model with one variable \") ";
+		   String ggplot = "print(ggplot(data=data, aes(x=" + indep[0] + ",y=" + response + ") ) + "
+		   		+ "geom_point(shape = 1) + geom_abline(intercept = coef(m)[1], slope = coef(m)[2], col = 'red' ) ); dev.off()";
+		   		   
+		   png = png.replaceAll("\\\\", "/");
+           c.eval("library(ggplot2)");
+           c.eval("require(ggplot2)");
+		   c.eval(png);
+		   c.parseAndEval(ggplot);
+	  }
+	  
 }
