@@ -220,8 +220,11 @@ public class TcpServer {
 		TcpServer server = new TcpServer(8000);
 		server.waitForClient();
 		metaData = server.receive();
+		if(metaData.equals("0")){
+			System.exit(0);
+		}
 		server.send("continue");
-		
+				
 		for(int i = 0 ; i < Integer.parseInt(metaData) ; i ++) {
 			server.receiveFile();
 			if( i == Integer.parseInt(metaData) - 1) {

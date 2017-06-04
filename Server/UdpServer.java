@@ -57,6 +57,10 @@ public class UdpServer {
 				char len = length.charAt(0);
 				int cnt = Character.getNumericValue(len);
 				
+				if(cnt ==0) {
+					System.exit(0);
+				}
+				
 				String strOut = "c";
 				byte[] strOutByte = strOut.getBytes();
 				

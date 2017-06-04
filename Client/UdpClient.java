@@ -35,7 +35,7 @@ public class UdpClient {
 	
 	public String createConnection(int idx){
 		
-		
+			
 		/*
 		 * 1. file length
 		 * 2. length receive
