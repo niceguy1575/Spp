@@ -29,17 +29,17 @@ public class clientUI {
 		System.out.println("-----------------------------------------");
 		System.out.print("   > ");
 		Scanner pathScan = new Scanner(System.in);
-//		String srcPath = pathScan.nextLine();
+		String srcPath = pathScan.nextLine();
 		
 		System.out.println("------------------------------------------");
 		System.out.println("----------- 2. 분셕결과를 저장할 경로 ------------");
 		System.out.println("------------------------------------------");
 		System.out.print("   > ");
-//		String destPath = pathScan.nextLine();
+		String destPath = pathScan.nextLine();
 		pathScan.close();
 		
-		String srcPath = "C:\\prac\\";
-		String destPath = "C:\\prac1\\";
+//		String srcPath = "C:\\prac\\";
+//		String destPath = "C:\\prac1\\";
 
 		// Client Connect
 		TcpClient TCPclient = new TcpClient(ipAdr, 8000, srcPath, destPath);
