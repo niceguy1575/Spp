@@ -2,16 +2,15 @@ package Server;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
-import org.rosuda.REngine.REXPMismatchException;
-import org.rosuda.REngine.REngineException;
+import org.rosuda.REngine.*;
+import org.rosuda.REngine.Rserve.*;
 
 import metaEvent.*;
 
 public class TcpServer {
+	
 	int port = 8000;
 	ServerSocket server;
 	Socket socket;
@@ -23,8 +22,10 @@ public class TcpServer {
 	PrintWriter out;
     CRC32get crc = new CRC32get();
     static double avgTime;
-    
-	public TcpServer (int port) {
+	int RprocessCnt = 0;
+	Rserv Rserv = new Rserv();
+	
+	public TcpServer (int port) throws RserveException {
 		try {
 			this.port = port;
 			
@@ -164,44 +165,57 @@ public class TcpServer {
 			System.out.print(val + "\t");
 		}
 		System.out.println();
-		
+	
 		System.out.println("------ Summary ------");
 		System.out.print(" 살펴볼 변수는 무엇입니까?    > ");
-		String variable = headerScan.nextLine();
-		
-		System.out.print("Graphic : 1. histogram, 2. boxplot > ");
-		int value = headerNumScan.nextInt();
-		
-		System.out.println("------ Regression ------");
+		boolean scanNext = headerScan.hasNext();
+		if( scanNext ) {
 
-		System.out.print(" 반응 변수는 무엇입니까?    > ");
-		String response = headerScan.nextLine();
+			String variable = headerScan.nextLine();
+			
+			System.out.print("Graphic : 1. histogram, 2. boxplot > ");
+			int value = headerNumScan.nextInt();
+			headerNumScan.nextLine();
+			
+			System.out.println("------ Regression ------");
+	
+			System.out.print(" 반응 변수는 무엇입니까?    > ");
+			String response = headerScan.nextLine();
+	
+			System.out.print(" 몇개의 독립변수를 사용하시겠습니까?   > ");
+			int indepNum = headerNumScan.nextInt();
+			headerNumScan.nextLine();
+			
+			String indep[] = new String[indepNum];
+			
+			System.out.print("Press Enter");
+			headerScan.nextLine();
 
-		System.out.print(" 몇개의 독립변수를 사용하시겠습니까?   > ");
-		int indepNum = headerNumScan.nextInt();
-		
-		String indep[] = new String[indepNum];
-		
-		for(int i = 0 ; i < indepNum ; i ++){
-			System.out.print((i+1) + "번째 독립 변수는 무엇입니까?    > ");
-			indep[i] = headerScan.nextLine();
-		}
-		
-		System.out.println("독립변수가 하나일 경우에는 linear model plot이 자동으로 그려집니다.");
-		
-		headerNumScan.close();
-		headerScan.close();
-		try {
-			Rprocess(value, response, variable, indep);
-		} catch (REXPMismatchException | REngineException e) {
-			e.printStackTrace();
+			for(int i = 0 ; i < indepNum ; i ++){
+				System.out.print((i+1) + "번째 독립 변수는 무엇입니까?    > ");
+				indep[i] = headerScan.next();
+				headerScan.nextLine();
+			}
+			
+			System.out.println("독립변수가 하나일 경우에는 linear model plot이 자동으로 그려집니다.");
+			
+//			headerNumScan.close();
+//			headerScan.close();
+			
+			try {
+				Rprocess(value, response, variable, indep);
+			} catch (REXPMismatchException | REngineException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
 	public void Rprocess(int value, String response, String variable, String ...indep)  throws REXPMismatchException, REngineException {
-	        Rserv Rserv = new Rserv();
-	       
+        	
+//		Rserv Rserv = new Rserv();
+		
 			String resDir = fileEvent.getDestDir() + "Results\\";
+			
 			if (!new File(resDir).exists()) {
 				new File(resDir).mkdirs();
 			}
@@ -213,9 +227,10 @@ public class TcpServer {
 	       if(indep.length == 1) {
 		       Rserv.lm_plot(resDir, response, indep);
 	       }
+	       RprocessCnt++;
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws RserveException {
 		String metaData;
 		TcpServer server = new TcpServer(8000);
 		server.waitForClient();

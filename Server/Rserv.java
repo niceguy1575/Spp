@@ -10,7 +10,7 @@ public class Rserv {
     public RConnection c = null;
 
     public Rserv() throws RserveException {
-           c = new RConnection();
+		c = new RConnection();
     }
        
     public void getRVersion() throws RserveException, REXPMismatchException {
@@ -42,6 +42,8 @@ public class Rserv {
     }
     
     public void read_file(String srcPath) throws RserveException, REXPMismatchException {
+    	srcPath = srcPath.replaceAll("\\\\", "/");
+    	System.out.println(srcPath);
         c.assign("src", srcPath);
         
         String extension = srcPath.substring(srcPath.length()-3, srcPath.length());

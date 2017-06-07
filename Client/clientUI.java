@@ -16,9 +16,8 @@ public class clientUI {
 		System.out.println("-----------------------------------------");
 		System.out.print("   > ");
 
-		Scanner ipScan = new Scanner(System.in);
-		String ipAdr = ipScan.nextLine();
-		ipScan.close();
+		Scanner scanner = new Scanner(System.in);
+		String ipAdr = scanner.nextLine();
 
 		System.out.println();
 		System.out.println("-----------------------------------------");
@@ -28,15 +27,14 @@ public class clientUI {
 		System.out.println("------- 또한 첫행은 각 변수의 이름을 넣어주세요 ------");
 		System.out.println("-----------------------------------------");
 		System.out.print("   > ");
-		Scanner pathScan = new Scanner(System.in);
-		String srcPath = pathScan.nextLine();
+		String srcPath = scanner.nextLine();
 		
 		System.out.println("------------------------------------------");
 		System.out.println("----------- 2. 분셕결과를 저장할 경로 ------------");
 		System.out.println("------------------------------------------");
 		System.out.print("   > ");
-		String destPath = pathScan.nextLine();
-		pathScan.close();
+		String destPath = scanner.nextLine();
+		scanner.close();
 		
 //		String srcPath = "C:\\prac\\";
 //		String destPath = "C:\\prac1\\";
