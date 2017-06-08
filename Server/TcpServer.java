@@ -2,15 +2,17 @@ package Server;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
-import org.rosuda.REngine.*;
-import org.rosuda.REngine.Rserve.*;
+import org.rosuda.REngine.REXPMismatchException;
+import org.rosuda.REngine.REngineException;
+import org.rosuda.REngine.Rserve.RserveException;
 
 import metaEvent.*;
 
 public class TcpServer {
-	
 	int port = 8000;
 	ServerSocket server;
 	Socket socket;
@@ -22,10 +24,9 @@ public class TcpServer {
 	PrintWriter out;
     CRC32get crc = new CRC32get();
     static double avgTime;
-	int RprocessCnt = 0;
 	Rserv Rserv = new Rserv();
-	
-	public TcpServer (int port) throws RserveException {
+
+	public TcpServer (int port)throws RserveException {
 		try {
 			this.port = port;
 			
@@ -211,9 +212,7 @@ public class TcpServer {
 	}
 	
 	public void Rprocess(int value, String response, String variable, String ...indep)  throws REXPMismatchException, REngineException {
-        	
-//		Rserv Rserv = new Rserv();
-		
+        			
 			String resDir = fileEvent.getDestDir() + "Results\\";
 			
 			if (!new File(resDir).exists()) {
@@ -227,10 +226,9 @@ public class TcpServer {
 	       if(indep.length == 1) {
 		       Rserv.lm_plot(resDir, response, indep);
 	       }
-	       RprocessCnt++;
 	}
 	
-	public static void main(String[] args) throws RserveException {
+	public static void main(String[] args)  throws RserveException{
 		String metaData;
 		TcpServer server = new TcpServer(8000);
 		server.waitForClient();
