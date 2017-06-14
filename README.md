@@ -42,15 +42,17 @@ Rserve()
 ## Input & Output
 
 ### Input 조건
-><li> txt (Delimiter : " " ) or csv (Delimiter : ",") </li>
- <li> 첫번째라인은 header(변수 명) 두번째 라인부터 자료(anything which is atomic) </li>
+<li> txt (Delimiter : " " ) or csv (Delimiter : ",") </li>
+<li> 첫번째라인은 header(변수 명) 두번째 라인부터 자료(anything which is atomic) </li>
 
 example of data
+
 | header1       | header2       | header3  |
 | ------------- |:-------------:| --------:|
 | observe[1,1]  | observe[1,2]  | observe[1,3] |
 | observe[2,1]  | observe[2,2]  | observe[2,3] |
 | observe[3,1]  | observe[3,2]  | observe[3,3] |
+
 
 ### Output
 
