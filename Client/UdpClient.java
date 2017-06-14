@@ -16,6 +16,7 @@ public class UdpClient {
 	String srcPath, destPath;
 	FileEvent event;
 	CRC32get crc = new CRC32get();
+	KBArray KBArr = new KBArray();
 	static String speedMsg;
 	
 	public UdpClient(String ip, int port, String srcPath, String destPath) {
@@ -34,7 +35,7 @@ public class UdpClient {
 	
 	public String createConnection(int idx){
 		
-		
+			
 		/*
 		 * 1. file length
 		 * 2. length receive
@@ -44,43 +45,18 @@ public class UdpClient {
 			
 			while(true) {
 				// meta data
-				File directory = new File(srcPath);
-				File[] fList = directory.listFiles();
+
+				File[] fList = KBArr.revDir(srcPath);
 				String len = String.valueOf(fList.length);
-				
-				double KB;
-				int i;
-				
+
 				List<Double> kbArr = new ArrayList<Double>();
-
-				for(File file:fList) {
-					KB = file.length()/1024;
-					kbArr.add(KB);
-				}
-
-				List<Double> kbIdx = new ArrayList<Double>(kbArr);
-
-//				Collections.sort(kbArr);
+				kbArr = KBArr.KBArr(srcPath);
 				Collections.sort(kbArr ,Collections.reverseOrder());
-				int[] indexes = new int[kbArr.size()];
-				
-				for(i = 0 ; i < kbArr.size() ; i ++) {
-					indexes[i] = kbArr.indexOf(kbIdx.get(i));
-				}
-								
-				File[] tempList = directory.listFiles();	
 
-				for(i = 0 ; i < fList.length; i++) {
-//					System.out.println("path : " + tempList[i]);
-					tempList[indexes[i]] = fList[i];
-//					System.out.println("changed : " + tempList[indexes[i]]);
-				}
-				fList = tempList;
-				
-				// 1. file length
+				// 1. file length				
 				String strOut = String.valueOf(idx);
 				byte[] strOutByte = strOut.getBytes();
-				
+
 				// file length send
 				sPack = new DatagramPacket(strOutByte, strOutByte.length, server, port);
 				dsock.send(sPack);
@@ -90,9 +66,15 @@ public class UdpClient {
 
 				rPack = new DatagramPacket(inputData, inputData.length);
 				dsock.receive(rPack);
-
+				
 				String response = new String(rPack.getData());
-				for(i = idx ; i < Integer.parseInt(len); i ++){					
+				
+				if(response.charAt(0)=='e') {
+					System.out.println("UDP client를 종료합니다.");
+					return speedMsg;
+				}
+				
+				for(int i = (fList.length - idx) ; i < Integer.parseInt(len); i ++){					
 					if(response.charAt(0) == 'c') {
 						event = getFileEvent(fList[i].getAbsolutePath());
 						

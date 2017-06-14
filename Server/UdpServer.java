@@ -2,12 +2,15 @@ package Server;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
-import javax.swing.JOptionPane;
+import org.rosuda.REngine.*;
+import org.rosuda.REngine.Rserve.*;
 
 import metaEvent.*;
 
 public class UdpServer {
+	
 	DatagramSocket dsock;
 	DatagramPacket sPack, rPack;
 	InetAddress client;
@@ -15,8 +18,10 @@ public class UdpServer {
 	FileEvent fileEvent;
     CRC32get crc = new CRC32get();
 	static double avgTime;
+	int RprocessCnt = 0;
+	Rserv Rserv = new Rserv();
 
-	public UdpServer(int sport) {
+	public UdpServer(int sport) throws RserveException {
 		try{
 			this.sport = sport;
 			
@@ -55,6 +60,17 @@ public class UdpServer {
 				char len = length.charAt(0);
 				int cnt = Character.getNumericValue(len);
 				
+				if(cnt ==0) {
+					
+					String strOut = "e";
+					byte[] strOutByte = strOut.getBytes();
+					
+					sPack = new DatagramPacket(strOutByte, strOutByte.length, client, cport);
+					dsock.send(sPack);
+					
+					System.exit(0);
+				}
+				
 				String strOut = "c";
 				byte[] strOutByte = strOut.getBytes();
 				
@@ -79,8 +95,8 @@ public class UdpServer {
 						System.out.println("Errors happened! while data packing");
 						System.exit(0);
 					}
-					
 					createAndWriteFile();
+					scanAndAnalysis();
 					cnt = cnt - 1;
 					if(checkCRCValue(fileEvent, crc.getCRC32(fileEvent.getDestDir() + fileEvent.getFilename(), fileEvent.getFileData())) == 0 ) {
 						System.out.format("무결성 보장!\n");
@@ -96,6 +112,7 @@ public class UdpServer {
 				dsock.send(sPack);
 			
 				Thread.sleep(3000);
+				
 				System.out.println("UDP 서버를 종료합니다.");
 				System.exit(0);
 			}
@@ -108,6 +125,86 @@ public class UdpServer {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void scanAndAnalysis(){
+		fileReader fr = new fileReader();
+		Scanner headerScan = new Scanner(System.in);
+		Scanner headerNumScan = new Scanner(System.in);
+		List<String> header= new ArrayList<String>();
+		
+		header = fr.read_head(fileEvent.getDestDir() + fileEvent.getFilename());
+		
+		System.out.println("------------------------------ ");
+		System.out.println(" header 출력");
+		
+		for(String val : header) {
+			System.out.print(val + "\t");
+		}
+		System.out.println();
+	
+		System.out.println("------ Summary ------");
+		System.out.print(" 살펴볼 변수는 무엇입니까?    > ");
+		boolean scanNext = headerScan.hasNext();
+		if( scanNext ) {
+
+			String variable = headerScan.nextLine();
+			
+			System.out.print("Graphic : 1. histogram, 2. boxplot > ");
+			int value = headerNumScan.nextInt();
+			headerNumScan.nextLine();
+			
+			System.out.println("------ Regression ------");
+	
+			System.out.print(" 반응 변수는 무엇입니까?    > ");
+			String response = headerScan.nextLine();
+	
+			System.out.print(" 몇개의 독립변수를 사용하시겠습니까?   > ");
+			int indepNum = headerNumScan.nextInt();
+			headerNumScan.nextLine();
+			
+			String indep[] = new String[indepNum];
+			
+			System.out.print("Press Enter");
+			headerScan.nextLine();
+
+			for(int i = 0 ; i < indepNum ; i ++){
+				System.out.print((i+1) + "번째 독립 변수는 무엇입니까?    > ");
+				indep[i] = headerScan.next();
+				headerScan.nextLine();
+			}
+			
+			System.out.println("독립변수가 하나일 경우에는 linear model plot이 자동으로 그려집니다.");
+			
+//			headerNumScan.close();
+//			headerScan.close();
+			
+			try {
+				Rprocess(value, response, variable, indep);
+			} catch (REXPMismatchException | REngineException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void Rprocess(int value, String response, String variable, String ...indep)  throws REXPMismatchException, REngineException {
+        	
+//		Rserv Rserv = new Rserv();
+		
+			String resDir = fileEvent.getDestDir() + "Results\\";
+			
+			if (!new File(resDir).exists()) {
+				new File(resDir).mkdirs();
+			}
+			
+	       Rserv.read_file( fileEvent.getDestDir() + fileEvent.getFilename() );
+	       Rserv.linearModel(resDir, response, indep);
+	       Rserv.summary(resDir, variable);
+	       Rserv.summary_plot(resDir, variable, value);
+	       if(indep.length == 1) {
+		       Rserv.lm_plot(resDir, response, indep);
+	       }
+	       RprocessCnt++;
 	}
 	
 	public long checkCRCValue(FileEvent event, long crcValue) {
@@ -129,25 +226,10 @@ public class UdpServer {
 		
 		File dstFile = new File(outputFile);
 		FileOutputStream fileOutputStream = null;
-		long existFileSize = 0;
-		int result = 1; // ConfirmDialog 반환값.
-		   if(!dstFile.exists()){
-		    // 없으면,
-		   }else{
-		    // 잇으면,
-		    result = JOptionPane.showConfirmDialog(null, "' 다음 경로에 \n" + fileEvent.getDestDir()+ "\n"+fileEvent.getFilename()+"가 이미 존재합니다. 이어받기 하시겠습니까?");
-		    if(result == 0){    // 예
-		     existFileSize = dstFile.length();
-		    }else if(result == 1){  // 아니오.
-		     existFileSize = 0;
-		    }
-		   }
-		   
+		
 		try {
-			fileOutputStream = new FileOutputStream(dstFile,true);
-			long len = existFileSize;
-			byte[] fileBytes = new byte[(int) len];
-			fileOutputStream.write(fileEvent.getFileData(),fileBytes.length,fileEvent.getFileData().length-fileBytes.length);
+			fileOutputStream = new FileOutputStream(dstFile);
+			fileOutputStream.write(fileEvent.getFileData());
 			fileOutputStream.flush();
 			fileOutputStream.close();
 			System.out.println("Output file : " + outputFile + " is successfully saved ");
@@ -158,7 +240,7 @@ public class UdpServer {
 		}
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws RserveException  {
 		UdpServer server = new UdpServer(8001);
 		server.createAndListenSocket();
 	}

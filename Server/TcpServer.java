@@ -2,10 +2,13 @@ package Server;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
+
+import org.rosuda.REngine.REXPMismatchException;
+import org.rosuda.REngine.REngineException;
+import org.rosuda.REngine.Rserve.RserveException;
 
 import metaEvent.*;
-import javax.swing.JOptionPane;
-
 
 public class TcpServer {
 	int port = 8000;
@@ -19,8 +22,9 @@ public class TcpServer {
 	PrintWriter out;
     CRC32get crc = new CRC32get();
     static double avgTime;
-    
-	public TcpServer (int port) {
+	Rserv Rserv = new Rserv();
+
+	public TcpServer (int port)throws RserveException {
 		try {
 			this.port = port;
 			
@@ -62,35 +66,22 @@ public class TcpServer {
 			if (!new File(fileEvent.getDestDir()).exists()) {
 				new File(fileEvent.getDestDir()).mkdirs();
 			}
+			
 			dstFile = new File(outputFile);
-			long existFileSize = 0;
-			int result = 1; // ConfirmDialog 반환값.
-			   if(!dstFile.exists()){
-			    // 없으면,
-			   }else{
-			    // 잇으면,
-			    result = JOptionPane.showConfirmDialog(null, "' 다음 경로에 \n" + fileEvent.getDestDir()+ "\n"+fileEvent.getFilename()+"가 이미 존재합니다. 이어받기 하시겠습니까?");
-			    if(result == 0){    // 예
-			     existFileSize = dstFile.length();
-			    }else if(result == 1){  // 아니오.
-			     existFileSize = 0;
-			    }
-			   }
-
-			fileOutputStream = new FileOutputStream(dstFile,true);
-			long len = existFileSize;
-			byte[] fileBytes = new byte[(int) len];
-			System.out.format("dstFile %d \n",fileBytes.length);
-			System.out.format("getFileData %d\n",fileEvent.getFileData().length);
-			fileOutputStream.write(fileEvent.getFileData(),fileBytes.length,fileEvent.getFileData().length-fileBytes.length);
+			
+			// 파일 저장
+			fileOutputStream = new FileOutputStream(dstFile);
+			fileOutputStream.write(fileEvent.getFileData());
 			fileOutputStream.flush();
 			fileOutputStream.close();
-	
-
+			
+			// Rprocess
+			scanAndAnalysis();
+			
 			long totaltime = System.currentTimeMillis() - fileEvent.gettime();
 			long s = fileEvent.getFileSize();
-			avgTime += (double) s/(totaltime * 1000);
-			
+			avgTime += Math.round((double) s/(totaltime * 1000) * 100d);
+
 			if(checkCRCValue(fileEvent, crc.getCRC32(outputFile,fileEvent.getFileData())) == 0 ) {
 				System.out.format("무결성 보장!\n");
 			} else {
@@ -100,6 +91,7 @@ public class TcpServer {
 			System.out.println("Output file : " + outputFile + "is successfully saved");
 
 			Thread.sleep(3000);
+			
 		} catch (IOException e) {
 			System.out.println(e.toString());			
 		}catch (ClassNotFoundException e) {
@@ -157,22 +149,111 @@ public class TcpServer {
 		System.out.println("     클라이언트 포트번호: " + socket.getPort() + '\n');
 	}
 	
-	public static void main(String[] args) {
-		String metaData;
-		TcpServer server = new TcpServer(8000);
-		server.waitForClient();
-		metaData = server.receive();
-		server.send("continue");
+	public void scanAndAnalysis(){
+		fileReader fr = new fileReader();
+		Scanner headerScan = new Scanner(System.in);
+		Scanner headerNumScan = new Scanner(System.in);
+		List<String> header= new ArrayList<String>();
 		
-		for(int i = 0 ; i < Integer.parseInt(metaData) ; i ++) {
-			server.receiveFile();
-			server.send("continue");
+		header = fr.read_head(fileEvent.getDestDir() + fileEvent.getFilename());
+		
+		System.out.println("------------------------------ ");
+		System.out.println(" header 출력");
+		
+		for(String val : header) {
+			System.out.print(val + "\t");
 		}
+		System.out.println();
+	
+		System.out.println("------ Summary ------");
+		System.out.print(" 살펴볼 변수는 무엇입니까?    > ");
+		boolean scanNext = headerScan.hasNext();
+		if( scanNext ) {
+
+			String variable = headerScan.nextLine();
+			
+			System.out.print("Graphic : 1. histogram, 2. boxplot > ");
+			int value = headerNumScan.nextInt();
+			headerNumScan.nextLine();
+			
+			System.out.println("------ Regression ------");
+	
+			System.out.print(" 반응 변수는 무엇입니까?    > ");
+			String response = headerScan.nextLine();
+	
+			System.out.print(" 몇개의 독립변수를 사용하시겠습니까?   > ");
+			int indepNum = headerNumScan.nextInt();
+			headerNumScan.nextLine();
+			
+			String indep[] = new String[indepNum];
+			
+			System.out.print("Press Enter");
+			headerScan.nextLine();
+
+			for(int i = 0 ; i < indepNum ; i ++){
+				System.out.print((i+1) + "번째 독립 변수는 무엇입니까?    > ");
+				indep[i] = headerScan.next();
+				headerScan.nextLine();
+			}
+			
+			System.out.println("독립변수가 하나일 경우에는 linear model plot이 자동으로 그려집니다.");
+			
+//			headerNumScan.close();
+//			headerScan.close();
+			
+			try {
+				Rprocess(value, response, variable, indep);
+			} catch (REXPMismatchException | REngineException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void Rprocess(int value, String response, String variable, String ...indep)  throws REXPMismatchException, REngineException {
+        			
+			String resDir = fileEvent.getDestDir() + "Results\\";
+			
+			if (!new File(resDir).exists()) {
+				new File(resDir).mkdirs();
+			}
+			
+	       Rserv.read_file( fileEvent.getDestDir() + fileEvent.getFilename() );
+	       Rserv.linearModel(resDir, response, indep);
+	       Rserv.summary(resDir, variable);
+	       Rserv.summary_plot(resDir, variable, value);
+	       if(indep.length == 1) {
+		       Rserv.lm_plot(resDir, response, indep);
+	       }
+	}
+	
+	public static void main(String[] args)  throws RserveException{
 		
-		System.out.println("file 전송속도 : "+ 1000 * avgTime / (double) Integer.parseInt(metaData)  + "bps");
-		System.out.println("file 전송속도 : "+ avgTime / (double) Integer.parseInt(metaData)  + "Mb/s");
-		
-		server.send("파일을 잘 받았습니다!");
-		server.close();
+		try {
+			
+			String metaData;
+			TcpServer server = new TcpServer(8000);
+			server.waitForClient();
+			metaData = server.receive();
+			
+			if(metaData.equals("0")){
+				System.exit(0);
+			}
+			
+			server.send("continue");
+					
+			for(int i = 0 ; i < Integer.parseInt(metaData) ; i ++) {
+				server.receiveFile();
+				if( i == Integer.parseInt(metaData) - 1) {
+					server.send(String.valueOf(avgTime));
+				}
+				else {
+					server.send("continue");
+				}
+			}
+			
+			server.close();
+		} catch(Exception e) {
+			System.exit(0);
+		}
 	}
 }

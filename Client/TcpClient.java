@@ -22,7 +22,14 @@ public class TcpClient {
 		this.srcPath = srcPath;
 		this.destPath = destPath;
 		
+		int cont = 0;
+		
 		while(!isConnected) {
+			
+			if( cont++ > 5 ) {
+				break;
+			}
+			
 			try {
 				socket = new Socket(ip, port);	
 				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -31,7 +38,6 @@ public class TcpClient {
 				//서버 소켓에 스트림을 연결
 				printInfo();
 				isConnected = true;
-
 			} catch (IOException e) {
 				System.out.println(e.toString());			
 			}
@@ -52,10 +58,17 @@ public class TcpClient {
 	}
 	
 	public void send(String msg) {
-		//서버 소켓에 메시지 전송
-		out.println(msg);
-		out.flush();
-		System.out.println("[클라이언트] " + msg);		
+		
+		if(isConnected == false) {
+			System.out.println("no connection!");
+		}
+		
+		else {
+			//서버 소켓에 메시지 전송
+			out.println(msg);
+			out.flush();
+			System.out.println("[클라이언트] " + msg);		
+		}
 	}
 	
 	public void sendFile(String srcPath) {
@@ -68,40 +81,30 @@ public class TcpClient {
 		fileEvent.setSrcDir(srcPath);
 		
 		File file = new File(srcPath);
-
+		long len = (int) file.length();
+		byte[] fileBytes = new byte[(int) len];
+				
 			if (file.isFile()) {
 				try {
-//					DataInputStream diStream = new DataInputStream(new FileInputStream(file));
-					long len = (int) file.length();
-					byte[] fileBytes = new byte[(int) len];
+					DataInputStream diStream = new DataInputStream(new FileInputStream(file));
 
-//					int read = 0;
-//					int numRead = 0;
-//					while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
-//						read = read + numRead;
-////					    if(){
-////		                     System.exit(0);
-////		                  }
-//					}
-//					
+					int read = 0;
+					int numRead = 0;
+					while (read < fileBytes.length && (numRead = diStream.read(fileBytes, read, fileBytes.length - read)) >= 0) {
+						read = read + numRead;
+					}
+					
 					long startTime = System.currentTimeMillis();
 					fileEvent.settime(startTime);
 					fileEvent.setFileSize(len);
 					fileEvent.setFileData(fileBytes);
 					fileEvent.setStatus("Success");
 					fileEvent.setCRC32Value(crc.getCRC32(srcPath,fileBytes));
-					
-					System.out.println((int) fileBytes.length+"\n");
+					fileEvent.setLen(len);
+					fileEvent.setRead(read);
+					Thread.sleep(2000);
 
-					for(int i=0; i<fileBytes.length; i++){
-						System.out.println(fileBytes[i]);
-					}
-//					System.out.println();
-//					for(int i=0; i<sendBytes.length; i++){
-//					System.out.println(sendBytes[i]);
-//			}
-					
-//					diStream.close();
+					diStream.close();
 				} catch (Exception e) {
 					e.printStackTrace();
 					fileEvent.setStatus("Error");
