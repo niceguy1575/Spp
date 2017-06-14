@@ -32,7 +32,7 @@ public class KBArray {
 	public File[] revDir(String srcPath) {
 		File directory = new File(srcPath);
 		File[] fList = directory.listFiles();
-				
+		
 		List<Double> kbArr = new ArrayList<Double>();
 		kbArr = KBArr(srcPath);
 		
@@ -45,16 +45,29 @@ public class KBArray {
 		for(int i = 0 ; i < kbArr.size(); i++){
 			kbArrVal[i] = kbArr.get(i);
 		}
-		
-		indexes = indexSort(kbArrVal, false);
-				
+
 		File[] tempList = directory.listFiles();
-				
-		for(int i = 0 ; i < fList.length; i++) {
-			tempList[i] = fList[getArrayIndex(indexes, i)];
-		}
-		fList = tempList;
 		
+		List<Double> sizeArr = new ArrayList<Double>();
+		sizeArr = KBArr(srcPath);
+		
+		int j = 0;
+		
+		for(int i = 0 ; i < fList.length; i++) {
+			j = 0;
+			for(Double val:sizeArr) {
+
+				if( kbArrVal[i] == val) {
+					break;
+				}
+				j++;
+			}
+
+			tempList[i] = fList[j];
+		}
+		
+		fList = tempList;
+
 		return fList;
 	}
 	

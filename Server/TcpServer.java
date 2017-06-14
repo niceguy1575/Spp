@@ -2,9 +2,7 @@ package Server;
 
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.REngineException;
@@ -229,25 +227,33 @@ public class TcpServer {
 	}
 	
 	public static void main(String[] args)  throws RserveException{
-		String metaData;
-		TcpServer server = new TcpServer(8000);
-		server.waitForClient();
-		metaData = server.receive();
-		if(metaData.equals("0")){
+		
+		try {
+			
+			String metaData;
+			TcpServer server = new TcpServer(8000);
+			server.waitForClient();
+			metaData = server.receive();
+			
+			if(metaData.equals("0")){
+				System.exit(0);
+			}
+			
+			server.send("continue");
+					
+			for(int i = 0 ; i < Integer.parseInt(metaData) ; i ++) {
+				server.receiveFile();
+				if( i == Integer.parseInt(metaData) - 1) {
+					server.send(String.valueOf(avgTime));
+				}
+				else {
+					server.send("continue");
+				}
+			}
+			
+			server.close();
+		} catch(Exception e) {
 			System.exit(0);
 		}
-		server.send("continue");
-				
-		for(int i = 0 ; i < Integer.parseInt(metaData) ; i ++) {
-			server.receiveFile();
-			if( i == Integer.parseInt(metaData) - 1) {
-				server.send(String.valueOf(avgTime));
-			}
-			else {
-				server.send("continue");
-			}
-		}
-		
-		server.close();
 	}
 }

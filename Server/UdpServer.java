@@ -61,6 +61,13 @@ public class UdpServer {
 				int cnt = Character.getNumericValue(len);
 				
 				if(cnt ==0) {
+					
+					String strOut = "e";
+					byte[] strOutByte = strOut.getBytes();
+					
+					sPack = new DatagramPacket(strOutByte, strOutByte.length, client, cport);
+					dsock.send(sPack);
+					
 					System.exit(0);
 				}
 				

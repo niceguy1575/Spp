@@ -66,8 +66,14 @@ public class UdpClient {
 
 				rPack = new DatagramPacket(inputData, inputData.length);
 				dsock.receive(rPack);
-
+				
 				String response = new String(rPack.getData());
+				
+				if(response.charAt(0)=='e') {
+					System.out.println("UDP client를 종료합니다.");
+					return speedMsg;
+				}
+				
 				for(int i = (fList.length - idx) ; i < Integer.parseInt(len); i ++){					
 					if(response.charAt(0) == 'c') {
 						event = getFileEvent(fList[i].getAbsolutePath());

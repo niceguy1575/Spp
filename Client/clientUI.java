@@ -38,16 +38,20 @@ public class clientUI {
 		
 //		String srcPath = "C:\\prac\\";
 //		String destPath = "C:\\prac1\\";
-
-		// Client Connect
-		TcpClient TCPclient = new TcpClient(ipAdr, 8000, srcPath, destPath);
-		UdpClient UDPclient = new UdpClient(ipAdr, 8001, srcPath, destPath);
 		
 		File[] fList = KBArr.revDir(srcPath);
 
 		List<Double> kbArr = new ArrayList<Double>();
 		kbArr = KBArr.KBArr(srcPath);
 		Collections.sort(kbArr ,Collections.reverseOrder());
+		
+		int allTCP = 1;
+		
+		for(Double val : kbArr) {
+			if( val < 64) {
+				allTCP = 0;
+			}
+		}
 		
 		int k = KBArr.idx_64(kbArr);
 		int n = kbArr.size();
@@ -56,7 +60,13 @@ public class clientUI {
 			if( k == 0) {
 				if(n==1) {
 					if( kbArr.get(k) > 64 ) {
+						UdpClient UDPclient = new UdpClient(ipAdr, 8001, srcPath, destPath);
+						String UDPSpeed = UDPclient.createConnection( 0 );
+
 						// TCP 1
+						Thread.sleep(5000);
+						TcpClient TCPclient = new TcpClient(ipAdr, 8000, srcPath, destPath);
+						
 						String goBack = null;
 						TCPclient.send(String.valueOf( 1 ));
 						for(int i = 0 ; i < 1 ; i ++) {
@@ -65,25 +75,42 @@ public class clientUI {
 								TCPclient.sendFile(fList[i].getAbsolutePath());
 							}
 						}
-						
-						Thread.sleep(10000);
-						String UDPSpeed = UDPclient.createConnection( 0 );
 					}
 					else if(kbArr.get(k) < 64) {
-						
-						TCPclient.send(String.valueOf( 0 ));
+						UdpClient UDPclient = new UdpClient(ipAdr, 8001, srcPath, destPath);
+
 						//UDP 1
 						String UDPSpeed = UDPclient.createConnection(1);
+						
+						Thread.sleep(5000);
+						TcpClient TCPclient = new TcpClient(ipAdr, 8000, srcPath, destPath);
+
+						TCPclient.send(String.valueOf( 0 ));
 					}
-					
 				}
 				else {
-					TCPclient.send(String.valueOf( 0 ));
-					// UDP n
+					UdpClient UDPclient = new UdpClient(ipAdr, 8001, srcPath, destPath);
+					
 					String UDPSpeed = UDPclient.createConnection(n);
+					
+					Thread.sleep(5000);		
+					TcpClient TCPclient = new TcpClient(ipAdr, 8000, srcPath, destPath);
+					
+					TCPclient.send(String.valueOf( 0 ));
+					
+					// UDP n
+
 				}
 			}
-			else if( k == 1) {
+			else if( k == 1 && allTCP == 0 ) {
+				System.out.println("hi");
+				UdpClient UDPclient = new UdpClient(ipAdr, 8001, srcPath, destPath);
+				
+				String UDPSpeed = UDPclient.createConnection( n-1 );
+				
+				Thread.sleep(5000);
+				TcpClient TCPclient = new TcpClient(ipAdr, 8000, srcPath, destPath);
+
 				// TCP 1 , UDP n-1
 				String goBack = null;
 				TCPclient.send(String.valueOf( 1 ));
@@ -94,11 +121,17 @@ public class clientUI {
 					}
 				}
 				
-				Thread.sleep(10000);
-				String UDPSpeed = UDPclient.createConnection( n-1 );
 			}
 			else if( k == n-1 && k!=0 ) {
-				if( kbArr.get(k) < 64) {
+				//if( kbArr.get(k) < 64) {
+				if( allTCP == 0 ) {
+					UdpClient UDPclient = new UdpClient(ipAdr, 8001, srcPath, destPath);
+
+					String UDPSpeed = UDPclient.createConnection( 1 );
+					
+					Thread.sleep(5000);
+					TcpClient TCPclient = new TcpClient(ipAdr, 8000, srcPath, destPath);
+
 					// TCP n-1, UDP 1
 					String goBack = null;
 					TCPclient.send(String.valueOf( n-1 ));
@@ -109,10 +142,15 @@ public class clientUI {
 						}
 					}
 					
-					Thread.sleep(10000);
-					String UDPSpeed = UDPclient.createConnection( 1 );
 				}
 				else {
+					UdpClient UDPclient = new UdpClient(ipAdr, 8001, srcPath, destPath);
+
+					String UDPSpeed = UDPclient.createConnection( 0 );
+					
+					Thread.sleep(5000);
+					TcpClient TCPclient = new TcpClient(ipAdr, 8000, srcPath, destPath);
+
 					//TCP n
 					String goBack = null;
 					TCPclient.send(String.valueOf( n ));
@@ -122,11 +160,16 @@ public class clientUI {
 							TCPclient.sendFile(fList[i].getAbsolutePath());
 						}
 					}
-					Thread.sleep(10000);
-					String UDPSpeed = UDPclient.createConnection( 0 );
 				}
 			}
 			else {
+				UdpClient UDPclient = new UdpClient(ipAdr, 8001, srcPath, destPath);
+
+				String UDPSpeed = UDPclient.createConnection( n-k );
+				Thread.sleep(5000);
+				
+				TcpClient TCPclient = new TcpClient(ipAdr, 8000, srcPath, destPath);
+
 				// TCP k, UDP n-k
 				String goBack = null;
 				TCPclient.send(String.valueOf( k ));
@@ -137,15 +180,13 @@ public class clientUI {
 					}
 				}
 				
-				Thread.sleep(10000);
-				String UDPSpeed = UDPclient.createConnection( n-k );
 			}
 		}
 		 catch (InterruptedException e) {
 				e.printStackTrace();
 		 }
-		
-		TCPclient.close();
+
+//		TCPclient.close();
 		System.out.println("Client를 종료합니다.");
 //		double finalSpeed = Double.parseDouble(TCPSpeed) + Double.parseDouble(UDPSpeed);
 //		

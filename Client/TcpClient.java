@@ -22,7 +22,14 @@ public class TcpClient {
 		this.srcPath = srcPath;
 		this.destPath = destPath;
 		
+		int cont = 0;
+		
 		while(!isConnected) {
+			
+			if( cont++ > 5 ) {
+				break;
+			}
+			
 			try {
 				socket = new Socket(ip, port);	
 				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -31,7 +38,6 @@ public class TcpClient {
 				//서버 소켓에 스트림을 연결
 				printInfo();
 				isConnected = true;
-
 			} catch (IOException e) {
 				System.out.println(e.toString());			
 			}
@@ -52,10 +58,17 @@ public class TcpClient {
 	}
 	
 	public void send(String msg) {
-		//서버 소켓에 메시지 전송
-		out.println(msg);
-		out.flush();
-		System.out.println("[클라이언트] " + msg);		
+		
+		if(isConnected == false) {
+			System.out.println("no connection!");
+		}
+		
+		else {
+			//서버 소켓에 메시지 전송
+			out.println(msg);
+			out.flush();
+			System.out.println("[클라이언트] " + msg);		
+		}
 	}
 	
 	public void sendFile(String srcPath) {
